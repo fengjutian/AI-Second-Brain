@@ -1,5 +1,4 @@
 from pydantic import BaseModel
-from datetime import datetime
 
 
 class NoteResponse(BaseModel):
@@ -9,8 +8,8 @@ class NoteResponse(BaseModel):
     content: str
     tags: list[str] = []
     aliases: list[str] = []
-    created: datetime
-    updated: datetime
+    created: str
+    updated: str
     word_count: int = 0
 
 

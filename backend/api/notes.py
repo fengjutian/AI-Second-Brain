@@ -14,7 +14,7 @@ router = APIRouter(prefix="/notes", tags=["notes"])
 
 @router.get("/")
 async def list_all_notes():
-    conn = _get_conn()
+    conn = get_conn()
     try:
         return list_notes(conn)
     finally:
@@ -24,7 +24,7 @@ async def list_all_notes():
 @router.get("/{note_id}")
 async def get_single_note(note_id: str):
     vault = shared.get_vault_path()
-    conn = _get_conn()
+    conn = get_conn()
     try:
         note = get_note(conn, vault, note_id)
         if not note:
@@ -37,7 +37,7 @@ async def get_single_note(note_id: str):
 @router.post("/")
 async def create_new_note(data: dict):
     vault = shared.get_vault_path()
-    conn = _get_conn()
+    conn = get_conn()
     try:
         note_id = create_note(conn, vault, data["path"], data.get("template"))
         note = get_note(conn, vault, note_id)
@@ -49,7 +49,7 @@ async def create_new_note(data: dict):
 @router.put("/{note_id}")
 async def update_existing_note(note_id: str, data: NoteUpdate):
     vault = shared.get_vault_path()
-    conn = _get_conn()
+    conn = get_conn()
     try:
         row = conn.execute("SELECT path FROM notes WHERE id = ?", (note_id,)).fetchone()
         if not row:
@@ -64,7 +64,7 @@ async def update_existing_note(note_id: str, data: NoteUpdate):
 @router.delete("/{note_id}")
 async def delete_existing_note(note_id: str):
     vault = shared.get_vault_path()
-    conn = _get_conn()
+    conn = get_conn()
     try:
         row = conn.execute("SELECT path FROM notes WHERE id = ?", (note_id,)).fetchone()
         if not row:
@@ -78,7 +78,7 @@ async def delete_existing_note(note_id: str):
 @router.patch("/{note_id}/rename")
 async def rename_note(note_id: str, data: NotePathUpdate):
     vault = shared.get_vault_path()
-    conn = _get_conn()
+    conn = get_conn()
     try:
         row = conn.execute("SELECT path FROM notes WHERE id = ?", (note_id,)).fetchone()
         if not row:
@@ -100,7 +100,7 @@ async def rename_note(note_id: str, data: NotePathUpdate):
 
 @router.get("/{note_id}/links/outgoing")
 async def outgoing_links(note_id: str):
-    conn = _get_conn()
+    conn = get_conn()
     try:
         return get_links(conn, note_id, "outgoing")
     finally:
@@ -109,7 +109,7 @@ async def outgoing_links(note_id: str):
 
 @router.get("/{note_id}/links/backlinks")
 async def backlinks(note_id: str):
-    conn = _get_conn()
+    conn = get_conn()
     try:
         return get_links(conn, note_id, "backlinks")
     finally:

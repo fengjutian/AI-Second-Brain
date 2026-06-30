@@ -4,7 +4,7 @@ from datetime import date
 
 import shared
 from core.indexer import create_note, get_note
-from data.database import connect, init_db
+from api import get_conn
 
 router = APIRouter(prefix="/daily", tags=["daily"])
 
@@ -19,8 +19,7 @@ async def get_today():
     today = date.today().isoformat()
     rel_path = f"daily/{today}.md"
 
-    conn = connect(vault)
-    init_db(conn)
+    conn = get_conn()
 
     # Check if exists
     row = conn.execute("SELECT id, path FROM notes WHERE path = ?", (rel_path,)).fetchone()
@@ -44,8 +43,7 @@ async def get_daily(date_str: str):
         return {"error": "No vault open"}
 
     rel_path = f"daily/{date_str}.md"
-    conn = connect(vault)
-    init_db(conn)
+    conn = get_conn()
     row = conn.execute("SELECT id FROM notes WHERE path = ?", (rel_path,)).fetchone()
 
     if not row:
