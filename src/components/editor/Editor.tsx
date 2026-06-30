@@ -8,6 +8,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { wikiLinkSuggestion } from "@/components/editor/WikiLink";
 import { WikiLinkHighlight } from "@/components/editor/WikiLinkHighlight";
 import { HoverPreview } from "@/components/editor/HoverPreview";
+import { SlashCommand } from "@/components/editor/SlashCommand";
+import { useSlashMenu, SlashMenu } from "@/components/editor/SlashMenu";
 import { api } from "@/lib/api";
 
 const WikiLink = Mention.configure({
@@ -68,6 +70,7 @@ export function Editor({ tabId, noteId }: EditorProps) {
           hoverCallbacks.current.onLeave();
         },
       }),
+      SlashCommand,
     ],
     content: note?.content || "",
     autofocus: false,
@@ -142,6 +145,12 @@ export function Editor({ tabId, noteId }: EditorProps) {
           <HoverPreview target={hoverTarget} position={hoverPos} />
         </div>
       </div>
+      <SlashOverlay editor={editor} />
     </div>
   );
+}
+
+function SlashOverlay({ editor }: { editor: ReturnType<typeof useEditor> }) {
+  const { visible, items, position, selectedIdx, handleSelect } = useSlashMenu();
+  return <SlashMenu items={items} position={position} selectedIdx={selectedIdx} onSelect={handleSelect} />;
 }
