@@ -23,6 +23,7 @@
     "@tiptap/starter-kit": "^2.11.0",
     "@tiptap/suggestion": "^2.11.0",
     "@tiptap/extension-mention": "^2.11.0",
+    "@tiptap/extension-placeholder": "^2.11.0",
     "tippy.js": "^6.3.0",
     "cytoscape": "^3.30.0",
     "lucide-react": "^0.468.0",

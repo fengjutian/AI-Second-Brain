@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { File, Folder, FolderOpen, ChevronRight, ChevronDown } from "lucide-react";
 import { api } from "@/lib/api";
 import { useTabStore } from "@/stores/tabStore";
-import { useNoteStore, type Note } from "@/stores/noteStore";
+import { useNoteStore } from "@/stores/noteStore";
 import { cn } from "@/lib/utils";
 
 interface TreeNode {

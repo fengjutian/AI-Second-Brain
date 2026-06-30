@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Bot, User, Loader2, X } from "lucide-react";
+import { Send, Bot, User, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Message {

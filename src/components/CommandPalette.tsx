@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import { Search, FilePlus, GitGraph, Settings, Calendar } from "lucide-react";
+import { Search, FilePlus, GitGraph, Settings, Calendar, Puzzle } from "lucide-react";
 import { useTabStore } from "@/stores/tabStore";
 import { useNavigate } from "react-router-dom";
+import { getRegisteredCommands } from "@/stores/pluginStore";
 
 interface Command {
   id: string;
@@ -27,11 +28,7 @@ export function CommandPalette({ onClose }: CommandPaletteProps) {
       label: "新建笔记",
       icon: FilePlus,
       action: () => {
-        openTab({
-          noteId: `new-${Date.now()}`,
-          title: "未命名",
-          path: "",
-        });
+        openTab({ noteId: `new-${Date.now()}`, title: "未命名", path: "" });
         onClose();
       },
     },
@@ -39,9 +36,16 @@ export function CommandPalette({ onClose }: CommandPaletteProps) {
       id: "daily-note",
       label: "打开日记",
       icon: Calendar,
-      action: () => {
-        const today = new Date().toISOString().slice(0, 10);
-        openTab({ noteId: `daily-${today}`, title: today, path: `daily/${today}.md` });
+      action: async () => {
+        try {
+          const { api } = await import("@/lib/api");
+          const note = await api.daily.today();
+          if (note?.id) {
+            const { useNoteStore } = await import("@/stores/noteStore");
+            useNoteStore.getState().loadNote(note.id, note);
+            openTab({ noteId: note.id, title: note.title, path: note.path });
+          }
+        } catch {}
         onClose();
       },
     },
@@ -49,20 +53,21 @@ export function CommandPalette({ onClose }: CommandPaletteProps) {
       id: "graph",
       label: "知识图谱",
       icon: GitGraph,
-      action: () => {
-        navigate("/graph");
-        onClose();
-      },
+      action: () => { navigate("/graph"); onClose(); },
     },
     {
       id: "settings",
       label: "设置",
       icon: Settings,
-      action: () => {
-        navigate("/settings");
-        onClose();
-      },
+      action: () => { navigate("/settings"); onClose(); },
     },
+    // Plugin commands
+    ...getRegisteredCommands().map((cmd) => ({
+      id: cmd.id,
+      label: cmd.name,
+      icon: Puzzle,
+      action: () => { cmd.callback(); onClose(); },
+    })),
   ];
 
   const filtered = commands.filter((c) =>

@@ -1,13 +1,52 @@
-import { useState } from "react";
-import { ArrowRight, ArrowLeft, Tags, MessageCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ArrowRight, ArrowLeft, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChatPanel } from "@/components/chat/ChatPanel";
+import { useNoteStore } from "@/stores/noteStore";
+import { useTabStore } from "@/stores/tabStore";
+import { api } from "@/lib/api";
 
 type Pane = "outgoing" | "backlinks" | "tags" | "ai";
+
+interface LinkItem {
+  id: number;
+  target_id: string | null;
+  target_text: string;
+  target_title: string | null;
+  target_path: string | null;
+  anchor: string | null;
+}
 
 export function RightSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [activePane, setActivePane] = useState<Pane>("outgoing");
+  const currentId = useNoteStore((s) => s.currentId);
+  const loadNote = useNoteStore((s) => s.loadNote);
+  const openTab = useTabStore((s) => s.openTab);
+
+  const [outgoing, setOutgoing] = useState<LinkItem[]>([]);
+  const [backlinks, setBacklinks] = useState<LinkItem[]>([]);
+
+  useEffect(() => {
+    if (!currentId) {
+      setOutgoing([]);
+      setBacklinks([]);
+      return;
+    }
+    api.notes.outgoingLinks(currentId).then(setOutgoing).catch(() => {});
+    api.notes.backlinks(currentId).then(setBacklinks).catch(() => {});
+  }, [currentId]);
+
+  const handleOpenLink = async (item: LinkItem) => {
+    if (!item.target_id) return;
+    try {
+      const note = await api.notes.get(item.target_id);
+      if (note) {
+        loadNote(note.id, note);
+        openTab({ noteId: note.id, title: note.title, path: note.path });
+      }
+    } catch {}
+  };
 
   if (collapsed) {
     return (
@@ -23,7 +62,6 @@ export function RightSidebar() {
   const tabs: { id: Pane; label: string; icon?: typeof MessageCircle }[] = [
     { id: "outgoing", label: "出链" },
     { id: "backlinks", label: "反链" },
-    { id: "tags", label: "标签" },
     { id: "ai", label: "AI", icon: MessageCircle },
   ];
 
@@ -54,12 +92,50 @@ export function RightSidebar() {
           <ArrowRight size={14} />
         </button>
       </div>
+
+      {/* Pane Content */}
       <div className="flex-1 overflow-hidden flex flex-col">
-        {activePane === "outgoing" && <div className="p-3 text-sm text-zinc-500">打开一篇笔记查看出链</div>}
-        {activePane === "backlinks" && <div className="p-3 text-sm text-zinc-500">打开一篇笔记查看反链</div>}
-        {activePane === "tags" && <div className="p-3 text-sm text-zinc-500">打开一篇笔记编辑标签</div>}
+        {activePane === "outgoing" && (
+          <LinkList items={outgoing} empty="暂无出链" onOpen={handleOpenLink} />
+        )}
+        {activePane === "backlinks" && (
+          <LinkList items={backlinks} empty="暂无反向链接" onOpen={handleOpenLink} />
+        )}
         {activePane === "ai" && <ChatPanel />}
       </div>
+    </div>
+  );
+}
+
+function LinkList({
+  items,
+  empty,
+  onOpen,
+}: {
+  items: LinkItem[];
+  empty: string;
+  onOpen: (item: LinkItem) => void;
+}) {
+  if (items.length === 0) {
+    return <div className="p-3 text-sm text-zinc-400 dark:text-zinc-500">{empty}</div>;
+  }
+
+  return (
+    <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
+      {items.map((item) => (
+        <button
+          key={item.id}
+          className="w-full text-left px-2 py-1.5 rounded text-sm hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50 transition-colors"
+          onClick={() => onOpen(item)}
+        >
+          <div className="font-medium truncate text-zinc-700 dark:text-zinc-300">
+            {item.target_title || item.target_text}
+          </div>
+          {item.target_path && (
+            <div className="text-xs text-zinc-400 truncate">{item.target_path}</div>
+          )}
+        </button>
+      ))}
     </div>
   );
 }

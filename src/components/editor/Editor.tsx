@@ -4,8 +4,10 @@ import Placeholder from "@tiptap/extension-placeholder";
 import Mention from "@tiptap/extension-mention";
 import { useNoteStore } from "@/stores/noteStore";
 import { useTabStore } from "@/stores/tabStore";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { wikiLinkSuggestion } from "@/components/editor/WikiLink";
+import { WikiLinkHighlight } from "@/components/editor/WikiLinkHighlight";
+import { HoverPreview } from "@/components/editor/HoverPreview";
 import { api } from "@/lib/api";
 
 const WikiLink = Mention.configure({
@@ -26,6 +28,24 @@ export function Editor({ tabId, noteId }: EditorProps) {
   const setDirty = useTabStore((s) => s.setDirty);
   const updateTitle = useTabStore((s) => s.updateTitle);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const [hoverTarget, setHoverTarget] = useState<string | null>(null);
+  const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null);
+  const hoverCallbacks = useRef<{ onHover: Function; onLeave: Function }>({
+    onHover: () => {},
+    onLeave: () => {},
+  });
+
+  // Keep hover callbacks in sync
+  hoverCallbacks.current = {
+    onHover: (target: string, pos: { x: number; y: number }) => {
+      setHoverTarget(target);
+      setHoverPos(pos);
+    },
+    onLeave: () => {
+      setHoverTarget(null);
+      setHoverPos(null);
+    },
+  };
 
   const editor = useEditor({
     extensions: [
@@ -36,6 +56,14 @@ export function Editor({ tabId, noteId }: EditorProps) {
         placeholder: "开始书写... [[链接]]  #标签",
       }),
       WikiLink,
+      WikiLinkHighlight.configure({
+        onHover: (target: string, pos: { x: number; y: number }) => {
+          hoverCallbacks.current.onHover(target, pos);
+        },
+        onLeave: () => {
+          hoverCallbacks.current.onLeave();
+        },
+      }),
     ],
     content: note?.content || "",
     autofocus: false,
@@ -105,6 +133,7 @@ export function Editor({ tabId, noteId }: EditorProps) {
         {/* Editor */}
         <div className="relative">
           <EditorContent editor={editor} />
+          <HoverPreview target={hoverTarget} position={hoverPos} />
         </div>
       </div>
     </div>

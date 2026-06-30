@@ -36,8 +36,12 @@ export const api = {
   chat: {
     send: (messages: { role: string; content: string }[]) =>
       request<any>("/chat", { method: "POST", body: JSON.stringify({ messages }) }),
+    outgoingLinks: (id: string) => request<any[]>(`/notes/${id}/links/outgoing`),
+    backlinks: (id: string) => request<any[]>(`/notes/${id}/links/backlinks`),
   },
-  graph: {
+    today: () => request<any>("/daily/today"),
+    get: (dateStr: string) => request<any>(`/daily/${dateStr}`),
+  },
     global: () => request<any>("/graph"),
     local: (id: string, depth = 1) => request<any>(`/graph/${id}/local?depth=${depth}`),
   },

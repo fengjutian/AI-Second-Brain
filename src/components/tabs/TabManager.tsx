@@ -1,6 +1,6 @@
 import { useTabStore } from "@/stores/tabStore";
 import { Editor } from "@/components/editor/Editor";
-import { X, Pin } from "lucide-react";
+import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function TabManager() {

@@ -3,7 +3,6 @@ import os
 import json
 import asyncio
 from contextlib import asynccontextmanager
-from typing import Optional
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,11 +11,15 @@ from core.indexer import scan_vault
 from core.watcher import start_watcher, stop_watcher
 from core.embeddings import EmbeddingEngine
 from core.rag import RAGEngine
+from core.plugin_system import plugin_manager
 from data.database import connect, init_db
-from api.notes import router as notes_router, set_vault_path
+import shared
+from api.notes import router as notes_router
 from api.search import router as search_router
 from api.chat import router as chat_router
 from api.graph import router as graph_router
+from api.daily import router as daily_router
+from api.import_api import router as import_router
 
 # ---- WebSocket Manager ----
 class ConnectionManager:
@@ -42,65 +45,53 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
-# ---- Vault State ----
-_vault_path: Optional[str] = None
-_embedding_engine: Optional[EmbeddingEngine] = None
-_rag_engine: Optional[RAGEngine] = None
-
-
-def get_embedding_engine() -> Optional[EmbeddingEngine]:
-    return _embedding_engine
-
-
-def get_rag_engine() -> Optional[RAGEngine]:
-    return _rag_engine
-
 
 def on_file_change(note_id: str, event_type: str):
     """Callback from file watcher — broadcast via WebSocket."""
-    asyncio.run_coroutine_threadsafe(
-        manager.broadcast({
-            "type": f"note_{event_type}",
-            "data": {"id": note_id},
-        }),
-        asyncio.get_event_loop(),
-    ) if asyncio.get_event_loop().is_running() else None
+    loop = asyncio.get_event_loop()
+    if loop.is_running():
+        asyncio.run_coroutine_threadsafe(
+            manager.broadcast({
+                "type": f"note_{event_type}",
+                "data": {"id": note_id},
+            }),
+            loop,
+        )
 
 
 # ---- App Lifecycle ----
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown logic."""
-    global _vault_path
-    # Startup: try to restore last vault from session file
+    vault_path = None
     session_file = os.path.join(os.path.dirname(__file__), ".session")
     if os.path.exists(session_file):
         with open(session_file) as f:
             data = json.load(f)
-            _vault_path = data.get("vault_path")
+            vault_path = data.get("vault_path")
 
-    if _vault_path and os.path.isdir(_vault_path):
-        set_vault_path(_vault_path)
-        print(f"[startup] Vault: {_vault_path}")
-        conn = connect(_vault_path)
+    if vault_path and os.path.isdir(vault_path):
+        shared.set_vault_path(vault_path)
+        print(f"[startup] Vault: {vault_path}")
+        conn = connect(vault_path)
         init_db(conn)
-        result = scan_vault(conn, _vault_path)
+        result = scan_vault(conn, vault_path)
         print(f"[startup] Indexed {result['indexed']} notes, cleaned {result['deleted']}")
         conn.close()
-        start_watcher(_vault_path, on_file_change)
+        start_watcher(vault_path, on_file_change)
     else:
         print("[startup] No vault open — waiting for /api/v1/vaults/open")
 
     yield
 
-    # Shutdown
     stop_watcher()
+    plugin_manager.deactivate_all()
     print("[shutdown] AI Second Brain backend stopped")
 
 
 app = FastAPI(
     title="AI Second Brain",
-    version="0.1.0",
+    version="0.2.0",
     lifespan=lifespan,
 )
 
@@ -121,27 +112,28 @@ app.include_router(notes_router, prefix="/api/v1")
 app.include_router(search_router, prefix="/api/v1")
 app.include_router(chat_router, prefix="/api/v1")
 app.include_router(graph_router, prefix="/api/v1")
+app.include_router(daily_router, prefix="/api/v1")
+app.include_router(import_router, prefix="/api/v1")
 
 
 # ---- Vault Management ----
 @app.get("/api/v1/vaults")
 async def get_vault():
     """Get current vault info."""
-    if not _vault_path:
+    path = shared.get_vault_path()
+    if not path:
         return {"path": None, "name": None}
-    return {"path": _vault_path, "name": os.path.basename(_vault_path)}
+    return {"path": path, "name": os.path.basename(path)}
 
 
 @app.post("/api/v1/vaults/open")
 async def open_vault(data: dict):
     """Open or create a vault."""
-    global _vault_path
     path = data["path"]
     if not os.path.isdir(path):
         os.makedirs(path, exist_ok=True)
 
-    _vault_path = path
-    set_vault_path(path)
+    shared.set_vault_path(path)
 
     # Persist session
     session_file = os.path.join(os.path.dirname(__file__), ".session")
@@ -155,18 +147,25 @@ async def open_vault(data: dict):
     conn.close()
 
     # Initialize AI engines
-    global _embedding_engine, _rag_engine
     try:
-        _embedding_engine = EmbeddingEngine(path, provider="local")
-        _rag_engine = RAGEngine(_embedding_engine, llm_provider="local")
-        print(f"[startup] AI engines ready — embeddings: {_embedding_engine.provider}, LLM: {_rag_engine.llm_provider}")
+        emb_engine = EmbeddingEngine(path, provider="local")
+        rag_engine = RAGEngine(emb_engine, llm_provider="local")
+        shared.set_embedding_engine(emb_engine)
+        shared.set_rag_engine(rag_engine)
+        print(f"[startup] AI engines ready — embeddings: {emb_engine.provider}, LLM: {rag_engine.llm_provider}")
     except Exception as e:
         print(f"[startup] AI engines not available: {e}")
-        _embedding_engine = None
-        _rag_engine = None
+        shared.set_embedding_engine(None)
+        shared.set_rag_engine(None)
 
     # Start watcher
     start_watcher(path, on_file_change)
+
+    # Load + activate backend plugins
+    n_plugins = plugin_manager.load_plugins(path)
+    if n_plugins > 0:
+        plugin_manager.activate_all(app)
+        print(f"[startup] Loaded {n_plugins} backend plugin(s)")
 
     return {
         "path": path,
@@ -183,7 +182,6 @@ async def websocket_endpoint(ws: WebSocket):
     try:
         while True:
             data = await ws.receive_json()
-            # Handle client messages like subscribe
             if data.get("type") == "ping":
                 await ws.send_json({"type": "pong"})
     except WebSocketDisconnect:
@@ -198,10 +196,10 @@ async def health():
     return {
         "status": "ok",
         "version": "0.2.0",
-        "vault": _vault_path,
+        "vault": shared.get_vault_path(),
         "ai": {
-            "embeddings": _embedding_engine is not None,
-            "rag": _rag_engine is not None,
+            "embeddings": shared.get_embedding_engine() is not None,
+            "rag": shared.get_rag_engine() is not None,
         },
     }
 
@@ -209,28 +207,28 @@ async def health():
 # ---- AI Endpoints ----
 @app.post("/api/v1/ai/suggest-tags")
 async def suggest_tags(data: dict):
-    """Suggest tags for note content."""
-    if not _rag_engine:
+    engine = shared.get_rag_engine()
+    if not engine:
         return {"tags": []}
-    tags = await _rag_engine.suggest_tags(data.get("content", ""))
+    tags = await engine.suggest_tags(data.get("content", ""))
     return {"tags": tags}
 
 
 @app.post("/api/v1/ai/summarize")
 async def summarize_note(data: dict):
-    """Summarize note content."""
-    if not _rag_engine:
+    engine = shared.get_rag_engine()
+    if not engine:
         return {"summary": "AI 引擎未启用"}
-    summary = await _rag_engine.summarize(data.get("content", ""))
+    summary = await engine.summarize(data.get("content", ""))
     return {"summary": summary}
 
 
 @app.post("/api/v1/ai/suggest-links")
 async def suggest_links(data: dict):
-    """Suggest related notes."""
-    if not _rag_engine:
+    engine = shared.get_rag_engine()
+    if not engine:
         return {"related": []}
-    related = await _rag_engine.suggest_links(
+    related = await engine.suggest_links(
         data.get("note_id", ""), data.get("content", "")
     )
     return {"related": related}

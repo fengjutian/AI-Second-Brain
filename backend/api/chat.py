@@ -1,25 +1,21 @@
 """AI Chat API — RAG-powered question answering."""
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
-from main import get_rag_engine
+import shared
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 
 @router.post("/")
 async def chat(data: dict):
-    """Non-streaming RAG chat.
-    Body: { messages: [{role, content}], stream: false }
-    """
-    engine = get_rag_engine()
+    engine = shared.get_rag_engine()
     if not engine:
-        raise HTTPException(503, "AI engine not available. Check LLM configuration.")
+        raise HTTPException(503, "AI engine not available. Open a vault first.")
 
     messages = data.get("messages", [])
     if not messages:
         raise HTTPException(400, "No messages provided")
 
-    # Use the last user message as query
     user_message = next(
         (m["content"] for m in reversed(messages) if m.get("role") == "user"),
         messages[-1]["content"],
@@ -31,10 +27,7 @@ async def chat(data: dict):
 
 @router.post("/stream")
 async def chat_stream(data: dict):
-    """Streaming RAG chat — returns Server-Sent Events.
-    Body: { messages: [{role, content}] }
-    """
-    engine = get_rag_engine()
+    engine = shared.get_rag_engine()
     if not engine:
         raise HTTPException(503, "AI engine not available.")
 
