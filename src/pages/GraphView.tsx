@@ -13,6 +13,7 @@ export function GraphView() {
 
   useEffect(() => {
     if (!containerRef.current) return;
+    let mounted = true;
 
     const cy = cytoscape({
       container: containerRef.current,
@@ -46,14 +47,21 @@ export function GraphView() {
     api.graph
       .global()
       .then((data) => {
-        if (!data.nodes) return;
+        if (!mounted) return;
+        if (!data.nodes) {
+          setLoading(false);
+          return;
+        }
         cy.batch(() => {
           data.nodes.forEach((n: { id: string; label: string }) => {
             cy.add({ group: "nodes", data: { id: n.id, label: n.label } });
           });
           if (data.edges) {
             data.edges.forEach((e: { source: string; target: string; label?: string }) => {
-              cy.add({ group: "edges", data: { id: `${e.source}-${e.target}`, source: e.source, target: e.target, label: e.label } });
+              cy.add({
+                group: "edges",
+                data: { id: `${e.source}-${e.target}`, source: e.source, target: e.target, label: e.label },
+              });
             });
           }
         });
@@ -61,13 +69,16 @@ export function GraphView() {
         setLoading(false);
       })
       .catch((e) => {
+        if (!mounted) return;
         console.error("Failed to load graph:", e);
         setError("无法加载知识图谱");
         setLoading(false);
       });
 
     return () => {
+      mounted = false;
       cy.destroy();
+      cyRef.current = null;
     };
   }, []);
 

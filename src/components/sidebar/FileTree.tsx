@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, memo, useCallback } from "react";
+import { useEffect, useState, useMemo, memo, useCallback, useRef } from "react";
 import { File, Folder, FolderOpen, ChevronRight, ChevronDown, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useTabStore } from "@/stores/tabStore";
@@ -56,6 +56,45 @@ export function FileTree() {
 
   useEffect(() => {
     api.notes.list().then(setNotes).catch(() => {});
+  }, []);
+
+  // Real-time updates via WebSocket from backend file watcher
+  const refreshRef = useRef<() => void>(() => {});
+  refreshRef.current = () => {
+    api.notes.list().then(setNotes).catch(() => {});
+  };
+
+  useEffect(() => {
+    let ws: WebSocket | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout>;
+
+    const connect = () => {
+      try {
+        ws = new WebSocket("ws://localhost:8710/ws");
+        ws.onmessage = (e) => {
+          try {
+            const msg = JSON.parse(e.data);
+            if (msg.type && /^note_/.test(msg.type)) {
+              refreshRef.current();
+            }
+          } catch {}
+        };
+        ws.onclose = () => {
+          // Reconnect after 3 seconds
+          reconnectTimer = setTimeout(connect, 3000);
+        };
+        ws.onerror = () => {
+          ws?.close();
+        };
+      } catch {}
+    };
+
+    connect();
+
+    return () => {
+      clearTimeout(reconnectTimer);
+      ws?.close();
+    };
   }, []);
 
   const tree = useMemo(() => buildTree(notes), [notes]);

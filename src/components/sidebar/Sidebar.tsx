@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Folder, Search, Plus, Tags, Star, Calendar } from "lucide-react";
+import { Folder, Search, Plus, Tags, Star, Calendar, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FileTree } from "@/components/sidebar/FileTree";
 import { SearchPanel } from "@/components/search/SearchPanel";
@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { useNoteStore } from "@/stores/noteStore";
 import { useTabStore } from "@/stores/tabStore";
 import { InputDialog } from "@/components/ui/InputDialog";
+import { useNavigate } from "react-router-dom";
 
 // Static icons — not recreated on every render
 const paneIcons = [
@@ -20,6 +21,7 @@ export function Sidebar() {
   const [newNoteOpen, setNewNoteOpen] = useState(false);
   const loadNote = useNoteStore((s) => s.loadNote);
   const openTab = useTabStore((s) => s.openTab);
+  const navigate = useNavigate();
 
   const handleCreateNote = async (name: string) => {
     try {
@@ -86,6 +88,17 @@ export function Sidebar() {
         {activePane === "search" && <SearchPane />}
         {activePane === "tags" && <TagsPane />}
       </div>
+
+      {/* Settings */}
+      <button
+        onClick={() => navigate("/settings")}
+        className="flex items-center gap-2 px-3 py-2 text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50 border-t border-zinc-200 dark:border-zinc-700 transition-colors"
+        title="设置"
+      >
+        <Settings size={14} />
+        设置
+      </button>
+
       <InputDialog
         open={newNoteOpen}
         onOpenChange={setNewNoteOpen}

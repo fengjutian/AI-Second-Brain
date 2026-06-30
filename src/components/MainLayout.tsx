@@ -7,13 +7,15 @@ import { useSettingsStore } from "@/stores/settingsStore";
 import { api } from "@/lib/api";
 import { useState, useEffect, useRef } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
-import { ChevronDown, FolderOpen, Plus, Check, Trash2 } from "lucide-react";
+import { ChevronDown, FolderOpen, Plus, Check, Trash2, GitGraph } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 
 export function MainLayout() {
   const vaultPath = useSettingsStore((s) => s.vaultPath);
   const vaultName = useSettingsStore((s) => s.vaultName);
   const [showCmdPalette, setShowCmdPalette] = useState(false);
+  const navigate = useNavigate();
 
   // Global keyboard shortcuts
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -33,6 +35,15 @@ export function MainLayout() {
       <div className="h-9 bg-zinc-100 dark:bg-zinc-800 flex items-center px-4 text-sm select-none border-b border-zinc-200 dark:border-zinc-700" data-tauri-drag-region>
         <span className="font-medium">{vaultName || "AI Second Brain"}</span>
         {vaultPath && <VaultSwitcher />}
+        <div className="flex-1" />
+        <button
+          onClick={() => navigate("/graph")}
+          className="flex items-center gap-1 px-2 py-0.5 rounded text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+          title="知识图谱"
+        >
+          <GitGraph size={14} />
+          图谱
+        </button>
       </div>
 
       {/* Main Content */}
