@@ -1,5 +1,5 @@
 """Daily Note API."""
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from datetime import date
 
 import shared
@@ -50,7 +50,7 @@ async def get_daily(date_str: str):
 
     if not row:
         conn.close()
-        return {"error": "Not found"}
+        raise HTTPException(404, "Not found")
 
     note = get_note(conn, vault, row["id"])
     conn.close()

@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { Search, Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useNoteStore } from "@/stores/noteStore";
@@ -14,40 +14,57 @@ interface SearchResult {
 
 export function SearchPanel() {
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const loadNote = useNoteStore((s) => s.loadNote);
   const openTab = useTabStore((s) => s.openTab);
   const requestIdRef = useRef(0);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>();
 
-  const handleSearch = useCallback(async (q: string) => {
-    setQuery(q);
-    if (q.trim().length < 1) {
+  // Debounce input
+  const handleInput = useCallback((value: string) => {
+    setQuery(value);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      setDebouncedQuery(value);
+    }, 250);
+  }, []);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+
+  // Search when debounced query changes
+  useEffect(() => {
+    const q = debouncedQuery.trim();
+    if (q.length < 1) {
       setResults([]);
       setSearched(false);
+      setLoading(false);
       return;
     }
 
     const id = ++requestIdRef.current;
     setLoading(true);
-    try {
-      const data = await api.search.keyword(q);
-      // Only apply if this is still the latest request
+    api.search.keyword(q).then((data) => {
       if (id === requestIdRef.current) {
         setResults(data);
         setSearched(true);
-      }
-    } catch {
-      if (id === requestIdRef.current) {
-        setResults([]);
-      }
-    } finally {
-      if (id === requestIdRef.current) {
         setLoading(false);
       }
-    }
-  }, []);
+    }).catch(() => {
+      if (id === requestIdRef.current) {
+        setResults([]);
+        setSearched(true);
+        setLoading(false);
+      }
+    });
+  }, [debouncedQuery]);
 
   const handleOpen = async (result: SearchResult) => {
     const note = await api.notes.get(result.note_id);
@@ -62,7 +79,7 @@ export function SearchPanel() {
         <input
           type="text"
           value={query}
-          onChange={(e) => handleSearch(e.target.value)}
+          onChange={(e) => handleInput(e.target.value)}
           placeholder="搜索笔记..."
           className="w-full pl-8 pr-3 py-1.5 text-sm rounded-md bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 outline-none focus:border-accent transition-colors"
         />

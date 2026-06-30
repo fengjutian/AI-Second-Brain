@@ -1,23 +1,22 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import cytoscape from "cytoscape";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { api } from "@/lib/api";
 
 export function GraphView() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const cyRef = useRef<cytoscape.Core | null>(null);
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
+
     const cy = cytoscape({
       container: containerRef.current,
-      elements: [
-        { data: { id: "1", label: "笔记 A" } },
-        { data: { id: "2", label: "笔记 B" } },
-        { data: { id: "3", label: "笔记 C" } },
-        { data: { id: "e1-2", source: "1", target: "2" } },
-        { data: { id: "e2-3", source: "2", target: "3" } },
-      ],
+      elements: [],
       style: [
         {
           selector: "node",
@@ -41,6 +40,31 @@ export function GraphView() {
       ],
       layout: { name: "cose" },
     });
+    cyRef.current = cy;
+
+    // Load real graph data
+    api.graph
+      .global()
+      .then((data) => {
+        if (!data.nodes) return;
+        cy.batch(() => {
+          data.nodes.forEach((n: { id: string; label: string }) => {
+            cy.add({ group: "nodes", data: { id: n.id, label: n.label } });
+          });
+          if (data.edges) {
+            data.edges.forEach((e: { source: string; target: string; label?: string }) => {
+              cy.add({ group: "edges", data: { id: `${e.source}-${e.target}`, source: e.source, target: e.target, label: e.label } });
+            });
+          }
+        });
+        cy.layout({ name: "cose" }).run();
+        setLoading(false);
+      })
+      .catch((e) => {
+        console.error("Failed to load graph:", e);
+        setError("无法加载知识图谱");
+        setLoading(false);
+      });
 
     return () => {
       cy.destroy();
@@ -55,6 +79,17 @@ export function GraphView() {
         </button>
         <span className="font-medium">知识图谱</span>
       </div>
+      {loading && (
+        <div className="flex items-center justify-center py-8 gap-2 text-sm text-zinc-400">
+          <Loader2 size={16} className="animate-spin" />
+          加载图谱...
+        </div>
+      )}
+      {error && (
+        <div className="flex items-center justify-center py-8 text-sm text-zinc-400">
+          {error}
+        </div>
+      )}
       <div ref={containerRef} className="flex-1 graph-container" />
     </div>
   );

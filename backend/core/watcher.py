@@ -34,6 +34,10 @@ class VaultWatcher(FileSystemEventHandler):
     def _debounce(self, path: str) -> bool:
         with self._lock:
             now = time.time()
+            # Cleanup stale entries older than 2x debounce window
+            stale = [p for p, t in self._pending.items() if now - t > self._debounce_seconds * 2]
+            for p in stale:
+                del self._pending[p]
             last = self._pending.get(path, 0)
             if now - last < self._debounce_seconds:
                 return False
@@ -96,7 +100,8 @@ class VaultWatcher(FileSystemEventHandler):
     def on_moved(self, event):
         if event.src_path and event.dest_path:
             self.on_deleted(event)
-            self.on_created(event)
+            # Use dest_path for the new file location
+            self._process(event.dest_path, "created")
 
 
 _watcher: Observer | None = None

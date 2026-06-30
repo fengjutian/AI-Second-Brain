@@ -113,9 +113,10 @@ async def catch_all_handler(request: Request, exc: Exception):
     """Ensure CORS headers on all error responses."""
     import traceback
     traceback.print_exception(type(exc), exc, exc.__traceback__)
+    detail = str(exc) if os.environ.get("DEBUG") else "Internal server error"
     return JSONResponse(
         status_code=500,
-        content={"detail": str(exc)},
+        content={"detail": detail},
     )
 
 
@@ -238,7 +239,9 @@ async def websocket_endpoint(ws: WebSocket):
                 await ws.send_json({"type": "pong"})
     except WebSocketDisconnect:
         manager.disconnect(ws)
-    except Exception:
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
         manager.disconnect(ws)
 
 

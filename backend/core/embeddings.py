@@ -61,16 +61,16 @@ class EmbeddingEngine:
             if self._model is not None or self._client is not None:
                 return
 
-        if self.provider == "local":
-            if not HAS_LOCAL_EMBEDDINGS:
-                raise RuntimeError("sentence-transformers not installed. Run: pip install sentence-transformers")
-            self._model = SentenceTransformer(self.model_name)
-        elif self.provider == "openai":
-            if not HAS_OPENAI:
-                raise RuntimeError("openai not installed. Run: pip install openai")
-            self._client = OpenAI()
-        else:
-            raise ValueError(f"Unknown embedding provider: {self.provider}")
+            if self.provider == "local":
+                if not HAS_LOCAL_EMBEDDINGS:
+                    raise RuntimeError("sentence-transformers not installed. Run: pip install sentence-transformers")
+                self._model = SentenceTransformer(self.model_name)
+            elif self.provider == "openai":
+                if not HAS_OPENAI:
+                    raise RuntimeError("openai not installed. Run: pip install openai")
+                self._client = OpenAI()
+            else:
+                raise ValueError(f"Unknown embedding provider: {self.provider}")
 
     def embed(self, texts: list[str]) -> list[list[float]]:
         """Generate embeddings for a list of text strings."""
@@ -113,8 +113,8 @@ class EmbeddingEngine:
         with self._write_lock:
             try:
                 self.collection.delete(ids=[note_id])
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"[embeddings] Failed to delete note {note_id} from ChromaDB: {e}")
 
     def semantic_search(self, query: str, limit: int = 10) -> list[dict]:
         """Search notes semantically by query string."""

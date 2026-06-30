@@ -28,6 +28,10 @@ export function Editor({ tabId, noteId }: EditorProps) {
   const setDirty = useTabStore((s) => s.setDirty);
   const updateTitle = useTabStore((s) => s.updateTitle);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const noteIdRef = useRef(noteId);
+  const tabIdRef = useRef(tabId);
+  noteIdRef.current = noteId;
+  tabIdRef.current = tabId;
   const [hoverTarget, setHoverTarget] = useState<string | null>(null);
   const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null);
   const hoverCallbacks = useRef<{ onHover: Function; onLeave: Function }>({
@@ -74,15 +78,17 @@ export function Editor({ tabId, noteId }: EditorProps) {
     },
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
-      setContent(noteId, html);
-      setDirty(tabId, true);
+      const nid = noteIdRef.current;
+      const tid = tabIdRef.current;
+      setContent(nid, html);
+      setDirty(tid, true);
 
       // Debounced auto-save
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
       saveTimerRef.current = setTimeout(async () => {
         try {
-          await api.notes.update(noteId, { content: html });
-          setDirty(tabId, false);
+          await api.notes.update(nid, { content: html });
+          setDirty(tid, false);
         } catch {
           // Backend not available — will retry
         }
