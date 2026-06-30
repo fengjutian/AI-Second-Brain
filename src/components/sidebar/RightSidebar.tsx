@@ -8,6 +8,13 @@ import { api } from "@/lib/api";
 
 type Pane = "outgoing" | "backlinks" | "tags" | "ai";
 
+// Static tabs list — not recreated on every render
+const paneTabs: { id: Pane; label: string; icon?: typeof MessageCircle }[] = [
+  { id: "outgoing", label: "出链" },
+  { id: "backlinks", label: "反链" },
+  { id: "ai", label: "AI", icon: MessageCircle },
+];
+
 interface LinkItem {
   id: number;
   target_id: string | null;
@@ -65,17 +72,11 @@ export function RightSidebar() {
     );
   }
 
-  const tabs: { id: Pane; label: string; icon?: typeof MessageCircle }[] = [
-    { id: "outgoing", label: "出链" },
-    { id: "backlinks", label: "反链" },
-    { id: "ai", label: "AI", icon: MessageCircle },
-  ];
-
   return (
     <div className="w-60 bg-zinc-50 dark:bg-zinc-900 border-l border-zinc-200 dark:border-zinc-700 flex flex-col shrink-0">
       <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-200 dark:border-zinc-700">
         <div className="flex gap-1">
-          {tabs.map(({ id, label, icon: Icon }) => (
+          {paneTabs.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
               className={cn(

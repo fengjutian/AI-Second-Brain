@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, memo } from "react";
 import { File, Folder, FolderOpen, ChevronRight, ChevronDown } from "lucide-react";
 import { api } from "@/lib/api";
 import { useTabStore } from "@/stores/tabStore";
@@ -56,7 +56,7 @@ export function FileTree() {
     api.notes.list().then(setNotes).catch(() => {});
   }, []);
 
-  const tree = buildTree(notes);
+  const tree = useMemo(() => buildTree(notes), [notes]);
 
   const handleOpen = async (noteId: string, path: string) => {
     // Fetch full note
@@ -97,7 +97,7 @@ export function FileTree() {
   );
 }
 
-function TreeNodeItem({
+const TreeNodeItem = memo(function TreeNodeItem({
   node,
   notes,
   onOpen,
@@ -148,4 +148,4 @@ function TreeNodeItem({
       <span className="truncate">{node.name.replace(/\.md$/, "")}</span>
     </button>
   );
-}
+});

@@ -4,7 +4,7 @@ import { useTabStore } from "@/stores/tabStore";
 export function StatusBar() {
   const currentId = useNoteStore((s) => s.currentId);
   const activeTabId = useTabStore((s) => s.activeTabId);
-  const activeTab = useTabStore((s) => s.tabs.find((t) => t.id === activeTabId));
+  const activeTab = useTabStore((s) => s.tabs.find((t) => t.id === s.activeTabId));
   const note = useNoteStore((s) => (currentId ? s.notes.get(currentId) : null));
 
   return (

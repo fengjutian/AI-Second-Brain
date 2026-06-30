@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Search, FilePlus, GitGraph, Settings, Calendar, Puzzle } from "lucide-react";
 import { useTabStore } from "@/stores/tabStore";
 import { useNavigate } from "react-router-dom";
@@ -22,7 +22,7 @@ export function CommandPalette({ onClose }: CommandPaletteProps) {
   const openTab = useTabStore((s) => s.openTab);
   const navigate = useNavigate();
 
-  const commands: Command[] = [
+  const commands: Command[] = useMemo(() => [
     {
       id: "new-note",
       label: "新建笔记",
@@ -68,7 +68,7 @@ export function CommandPalette({ onClose }: CommandPaletteProps) {
       icon: Puzzle,
       action: () => { cmd.callback(); onClose(); },
     })),
-  ];
+  ], [openTab, navigate, onClose]);
 
   const filtered = commands.filter((c) =>
     c.label.toLowerCase().includes(query.toLowerCase())

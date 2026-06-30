@@ -7,6 +7,13 @@ import { api } from "@/lib/api";
 import { useNoteStore } from "@/stores/noteStore";
 import { useTabStore } from "@/stores/tabStore";
 
+// Static icons — not recreated on every render
+const paneIcons = [
+  { id: "files" as const, icon: Folder, label: "文件" },
+  { id: "search" as const, icon: Search, label: "搜索" },
+  { id: "tags" as const, icon: Tags, label: "标签" },
+];
+
 export function Sidebar() {
   const [activePane, setActivePane] = useState<"files" | "search" | "tags">("files");
   const loadNote = useNoteStore((s) => s.loadNote);
@@ -36,12 +43,6 @@ export function Sidebar() {
     }
   };
 
-  const icons = [
-    { id: "files" as const, icon: Folder, label: "文件" },
-    { id: "search" as const, icon: Search, label: "搜索" },
-    { id: "tags" as const, icon: Tags, label: "标签" },
-  ];
-
   return (
     <div className="w-60 bg-zinc-50 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-700 flex flex-col shrink-0">
       {/* Quick Actions */}
@@ -64,7 +65,7 @@ export function Sidebar() {
 
       {/* Pane Switcher */}
       <div className="flex border-b border-zinc-200 dark:border-zinc-700">
-        {icons.map(({ id, icon: Icon, label }) => (
+        {paneIcons.map(({ id, icon: Icon, label }) => (
           <button
             key={id}
             className={cn(

@@ -5,16 +5,17 @@ import { usePluginStore } from "@/stores/pluginStore";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 
+// Static theme list — not recreated on every render
+const themes: { id: Theme; label: string; icon: typeof Sun }[] = [
+  { id: "light", label: "浅色", icon: Sun },
+  { id: "dark", label: "深色", icon: Moon },
+  { id: "system", label: "跟随系统", icon: Monitor },
+];
+
 export function SettingsPage() {
   const navigate = useNavigate();
   const theme = useSettingsStore((s) => s.theme);
   const setTheme = useSettingsStore((s) => s.setTheme);
-
-  const themes: { id: Theme; label: string; icon: typeof Sun }[] = [
-    { id: "light", label: "浅色", icon: Sun },
-    { id: "dark", label: "深色", icon: Moon },
-    { id: "system", label: "跟随系统", icon: Monitor },
-  ];
 
   return (
     <div className="h-screen flex flex-col">
@@ -57,12 +58,6 @@ export function SettingsPage() {
         <section>
           <h3 className="text-sm font-medium mb-3">导入</h3>
           <ImportSection />
-        </section>
-
-        {/* Plugins */}
-        <section>
-          <h3 className="text-sm font-medium mb-3">插件</h3>
-          <PluginSection />
         </section>
 
         {/* About */}
