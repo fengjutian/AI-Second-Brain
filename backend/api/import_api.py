@@ -48,6 +48,13 @@ async def import_obsidian(data: dict):
 
             dst_path = os.path.join(vault, dst_rel)
 
+            # Prevent path traversal — ensure dst stays inside vault
+            dst_real = os.path.realpath(dst_path)
+            vault_real = os.path.realpath(vault)
+            if os.path.commonpath([dst_real, vault_real]) != vault_real:
+                errors.append(f"{dst_rel}: path traversal denied")
+                continue
+
             # Skip if already exists
             if os.path.exists(dst_path):
                 skipped += 1

@@ -48,7 +48,7 @@ class PluginManager:
                 continue
 
             try:
-                with open(manifest_path, "r") as f:
+                with open(manifest_path, "r", encoding="utf-8") as f:
                     manifest = json.load(f)
 
                 spec = importlib.util.spec_from_file_location(

@@ -98,22 +98,21 @@ def index_file(conn: sqlite3.Connection, vault_path: str, rel_path: str) -> Opti
         )
     else:
         note_id = meta.get("id") or str(uuid.uuid4())
-        if not row:
-            try:
-                conn.execute(
-                    """INSERT INTO notes (id, path, title, aliases, tags, created, updated, word_count, checksum)
-                       VALUES (?,?,?,?,?,?,?,?,?)""",
-                    (note_id, rel_path, title, json.dumps(aliases), json.dumps(all_tags),
-                     created, updated, word_count, checksum),
-                )
-            except sqlite3.IntegrityError:
-                # Race condition — file created between check and insert
-                note_id = conn.execute("SELECT id FROM notes WHERE path=?", (rel_path,)).fetchone()["id"]
-                conn.execute(
-                    """UPDATE notes SET title=?, aliases=?, tags=?, updated=?, word_count=?, checksum=?
-                       WHERE id=?""",
-                    (title, json.dumps(aliases), json.dumps(all_tags), now, word_count, checksum, note_id),
-                )
+        try:
+            conn.execute(
+                """INSERT INTO notes (id, path, title, aliases, tags, created, updated, word_count, checksum)
+                   VALUES (?,?,?,?,?,?,?,?,?)""",
+                (note_id, rel_path, title, json.dumps(aliases), json.dumps(all_tags),
+                 created, updated, word_count, checksum),
+            )
+        except sqlite3.IntegrityError:
+            # Race condition — file created between check and insert
+            note_id = conn.execute("SELECT id FROM notes WHERE path=?", (rel_path,)).fetchone()["id"]
+            conn.execute(
+                """UPDATE notes SET title=?, aliases=?, tags=?, updated=?, word_count=?, checksum=?
+                   WHERE id=?""",
+                (title, json.dumps(aliases), json.dumps(all_tags), now, word_count, checksum, note_id),
+            )
 
     # Update FTS5 index
     conn.execute("DELETE FROM notes_fts WHERE rowid = (SELECT rowid FROM notes WHERE id = ?)", (note_id,))

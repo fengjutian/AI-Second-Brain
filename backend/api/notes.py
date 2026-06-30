@@ -1,24 +1,15 @@
 """Notes CRUD API."""
 from fastapi import APIRouter, HTTPException
-import sqlite3, os, shutil
+import os, shutil
 
 import shared
 from core.indexer import (
     get_note, list_notes, create_note, update_note, delete_note, get_links,
 )
-from data.database import connect, init_db
+from api import get_conn
 from models.schemas import NoteCreate, NoteUpdate, NotePathUpdate
 
 router = APIRouter(prefix="/notes", tags=["notes"])
-
-
-def _get_conn() -> sqlite3.Connection:
-    vault = shared.get_vault_path()
-    if not vault:
-        raise HTTPException(500, "Vault not initialized")
-    conn = connect(vault)
-    init_db(conn)
-    return conn
 
 
 @router.get("/")
