@@ -183,30 +183,49 @@
 | AI 对话 | **LlamaIndex** | RAG 框架，文档解析 + 索引 + 检索一体化 |
 | 向量数据库 | **ChromaDB** | 轻量、本地优先、Python 原生 |
 | 搜索索引 | **SQLite FTS5** | 后端全文索引，与 ChromaDB 共用一个 SQLite 实例，零额外依赖 |
+| 状态管理 | **Zustand** | 轻量、TS 友好、中间件齐全 |
+| CSS 方案 | **Tailwind CSS** | 原子化 CSS，快速、一致性强 |
+| 组件库 | **Radix UI** (Headless) | 无样式组件，配合 Tailwind 自定义风格 |
+
+### 工程决策
+
+| 决策项 | 结论 |
+|--------|------|
+| IPC 通信 | Tauri sidecar 自动拉起 FastAPI，前端通过 `localhost:{port}` HTTP/WebSocket 通信 |
+| 后端部署 | 开发：手动 `uvicorn --reload`；生产：PyInstaller 打包，Tauri sidecar 捆绑 |
+| 文件监听 | FastAPI 后端 `watchdog` 监听 vault 目录，变更后重建 FTS5 索引 + 向量嵌入，通过 WebSocket 推送前端刷新 |
+| 前端路由 | React Router（页面级导航）+ 自建 TabManager 组件（多标签页状态） |
 
 ### 架构概览
 
 ```
-┌──────────────────────┐
-│   Tauri Desktop App  │
-│  ┌────────────────┐  │
-│  │  React Frontend │  │
-│  └───────┬────────┘  │
-│          │ HTTP/WS    │
-│  ┌───────▼────────┐  │
-│  │  FastAPI Backend│  │
-│  │  ├─ RAG Engine  │  │
-│  │  ├─ Search      │  │
-│  │  └─ AI Services │  │
-│  └───────┬────────┘  │
-│          │            │
-│  ┌───────▼────────┐  │
-│  │  Local Storage  │  │
-│  │  (.md files,    │  │
-│  │   SQLite,       │  │
-│  │   Vector DB)    │  │
-│  └────────────────┘  │
-└──────────────────────┘
+┌──────────────────────────────────┐
+│        Tauri Desktop App         │
+│  ┌────────────────────────────┐  │
+│  │  React + TypeScript        │  │
+│  │  ├─ Tailwind CSS + Radix   │  │
+│  │  ├─ Zustand (state)        │  │
+│  │  ├─ TipTap (editor)        │  │
+│  │  ├─ Cytoscape.js (graph)   │  │
+│  │  └─ TabManager + Router    │  │
+│  └──────────────┬─────────────┘  │
+│                 │ HTTP + WS       │
+│  ┌──────────────▼─────────────┐  │
+│  │  FastAPI (sidecar)         │  │
+│  │  ├─ REST API                │  │
+│  │  ├─ WebSocket (file watch)  │  │
+│  │  ├─ LlamaIndex RAG Engine   │  │
+│  │  ├─ SQLite FTS5 (search)    │  │
+│  │  └─ ChromaDB (vectors)      │  │
+│  └──────────────┬─────────────┘  │
+│                 │                 │
+│  ┌──────────────▼─────────────┐  │
+│  │  Local Storage             │  │
+│  │  ├─ *.md (notes)           │  │
+│  │  ├─ attachments/           │  │
+│  │  └─ data/ (SQLite + Chroma)│  │
+│  └────────────────────────────┘  │
+└──────────────────────────────────┘
 ```
 
 ---
