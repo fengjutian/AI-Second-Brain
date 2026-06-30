@@ -1,5 +1,5 @@
-import { useEffect, useState, useMemo, memo } from "react";
-import { File, Folder, FolderOpen, ChevronRight, ChevronDown } from "lucide-react";
+import { useEffect, useState, useMemo, memo, useCallback } from "react";
+import { File, Folder, FolderOpen, ChevronRight, ChevronDown, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useTabStore } from "@/stores/tabStore";
 import { useNoteStore } from "@/stores/noteStore";
@@ -60,12 +60,11 @@ export function FileTree() {
 
   const tree = useMemo(() => buildTree(notes), [notes]);
 
-  const handleOpen = async (noteId: string, path: string) => {
-    // Fetch full note
+  const handleOpen = useCallback(async (noteId: string, path: string) => {
     const note = await api.notes.get(noteId);
     loadNote(noteId, note);
     openTab({ noteId, title: note.title, path: note.path });
-  };
+  }, [loadNote, openTab]);
 
   const handleCreateNote = async (name: string) => {
     const path = `${name}.md`;
@@ -74,6 +73,16 @@ export function FileTree() {
     loadNote(note.id, note);
     openTab({ noteId: note.id, title: note.title, path: note.path });
   };
+
+  const handleDeleteNote = useCallback(async (noteId: string) => {
+    if (!confirm("确定删除这篇笔记？\n\n笔记会被移到 .trash 目录，可以手动恢复。")) return;
+    try {
+      await api.notes.delete(noteId);
+      setNotes((prev) => prev.filter((n) => n.id !== noteId));
+    } catch (e) {
+      console.error("Failed to delete note:", e);
+    }
+  }, []);
 
   return (
     <div className="space-y-0.5">
@@ -90,7 +99,13 @@ export function FileTree() {
         <p className="text-xs text-zinc-400 px-1 py-2">暂无笔记</p>
       ) : (
         tree.map((node) => (
-          <TreeNodeItem key={node.path} node={node} notes={notes} onOpen={handleOpen} />
+          <TreeNodeItem
+            key={node.path}
+            node={node}
+            notes={notes}
+            onOpen={handleOpen}
+            onDelete={handleDeleteNote}
+          />
         ))
       )}
       <InputDialog
@@ -109,14 +124,16 @@ const TreeNodeItem = memo(function TreeNodeItem({
   node,
   notes,
   onOpen,
+  onDelete,
   depth = 0,
 }: {
   node: TreeNode;
   notes: { id: string; path: string; title: string }[];
   onOpen: (id: string, path: string) => void;
+  onDelete: (id: string) => void;
   depth?: number;
 }) {
-  const [expanded, setExpanded] = useState(depth < 2); // Auto-expand first 2 levels
+  const [expanded, setExpanded] = useState(depth < 2);
 
   if (node.isDir) {
     return (
@@ -137,6 +154,7 @@ const TreeNodeItem = memo(function TreeNodeItem({
               node={child}
               notes={notes}
               onOpen={onOpen}
+              onDelete={onDelete}
               depth={depth + 1}
             />
           ))}
@@ -147,13 +165,26 @@ const TreeNodeItem = memo(function TreeNodeItem({
   // File node
   const note = notes.find((n) => n.path === node.path);
   return (
-    <button
-      className="w-full flex items-center gap-1 px-1 py-0.5 text-xs rounded hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50 transition-colors text-zinc-700 dark:text-zinc-300"
-      style={{ paddingLeft: `${depth * 12 + 4}px` }}
-      onClick={() => note && onOpen(note.id, node.path)}
-    >
-      <File size={12} className="shrink-0" />
-      <span className="truncate">{node.name.replace(/\.md$/, "")}</span>
-    </button>
+    <div className="group flex items-center">
+      <button
+        className="flex-1 flex items-center gap-1 px-1 py-0.5 text-xs rounded hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50 transition-colors text-zinc-700 dark:text-zinc-300 min-w-0"
+        style={{ paddingLeft: `${depth * 12 + 4}px` }}
+        onClick={() => note && onOpen(note.id, node.path)}
+      >
+        <File size={12} className="shrink-0" />
+        <span className="truncate">{node.name.replace(/\.md$/, "")}</span>
+      </button>
+      {/* Delete button — visible on hover */}
+      <button
+        className="p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-red-100 dark:hover:bg-red-900/30 text-zinc-400 hover:text-red-500 transition-all shrink-0"
+        title="删除笔记"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (note) onDelete(note.id);
+        }}
+      >
+        <Trash2 size={12} />
+      </button>
+    </div>
   );
 });

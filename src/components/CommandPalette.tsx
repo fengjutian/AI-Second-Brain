@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { Search, FilePlus, GitGraph, Settings, Calendar, Puzzle } from "lucide-react";
+import { Search, FilePlus, GitGraph, Settings, Calendar, Puzzle, Trash2 } from "lucide-react";
 import { useTabStore } from "@/stores/tabStore";
 import { useNavigate } from "react-router-dom";
 import { getRegisteredCommands } from "@/stores/pluginStore";
@@ -20,6 +20,7 @@ export function CommandPalette({ onClose }: CommandPaletteProps) {
   const [selectedIdx, setSelectedIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const openTab = useTabStore((s) => s.openTab);
+  const closeTab = useTabStore((s) => s.closeTab);
   const navigate = useNavigate();
 
   const commands: Command[] = useMemo(() => [
@@ -60,6 +61,27 @@ export function CommandPalette({ onClose }: CommandPaletteProps) {
       label: "设置",
       icon: Settings,
       action: () => { navigate("/settings"); onClose(); },
+    },
+    {
+      id: "delete-note",
+      label: "删除当前笔记",
+      icon: Trash2,
+      action: async () => {
+        const { useNoteStore } = await import("@/stores/noteStore");
+        const currentId = useNoteStore.getState().currentId;
+        const note = currentId ? useNoteStore.getState().notes.get(currentId) : null;
+        if (!note) return;
+        if (!confirm(`确定删除「${note.title}」？\n\n笔记会被移到 .trash 目录。`)) return;
+        try {
+          const { api } = await import("@/lib/api");
+          await api.notes.delete(currentId);
+          useNoteStore.getState().removeNote(currentId);
+          closeTab(currentId);
+        } catch (e) {
+          console.error("Delete failed:", e);
+        }
+        onClose();
+      },
     },
     // Plugin commands
     ...getRegisteredCommands().map((cmd) => ({
