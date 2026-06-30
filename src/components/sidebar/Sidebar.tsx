@@ -6,6 +6,7 @@ import { SearchPanel } from "@/components/search/SearchPanel";
 import { api } from "@/lib/api";
 import { useNoteStore } from "@/stores/noteStore";
 import { useTabStore } from "@/stores/tabStore";
+import { InputDialog } from "@/components/ui/InputDialog";
 
 // Static icons — not recreated on every render
 const paneIcons = [
@@ -16,12 +17,11 @@ const paneIcons = [
 
 export function Sidebar() {
   const [activePane, setActivePane] = useState<"files" | "search" | "tags">("files");
+  const [newNoteOpen, setNewNoteOpen] = useState(false);
   const loadNote = useNoteStore((s) => s.loadNote);
   const openTab = useTabStore((s) => s.openTab);
 
-  const handleNewNote = async () => {
-    const name = prompt("笔记名（不含 .md）：");
-    if (!name) return;
+  const handleCreateNote = async (name: string) => {
     try {
       const note = await api.notes.create({ path: `${name}.md` });
       loadNote(note.id, note);
@@ -50,7 +50,7 @@ export function Sidebar() {
         <button
           className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
           title="新建笔记"
-          onClick={handleNewNote}
+          onClick={() => setNewNoteOpen(true)}
         >
           <Plus size={14} /> 新建
         </button>
@@ -86,6 +86,14 @@ export function Sidebar() {
         {activePane === "search" && <SearchPane />}
         {activePane === "tags" && <TagsPane />}
       </div>
+      <InputDialog
+        open={newNoteOpen}
+        onOpenChange={setNewNoteOpen}
+        title="新建笔记"
+        placeholder="笔记名（不含 .md）"
+        confirmLabel="创建"
+        onConfirm={handleCreateNote}
+      />
     </div>
   );
 }

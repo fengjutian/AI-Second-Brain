@@ -4,6 +4,7 @@ import { api } from "@/lib/api";
 import { useTabStore } from "@/stores/tabStore";
 import { useNoteStore } from "@/stores/noteStore";
 import { cn } from "@/lib/utils";
+import { InputDialog } from "@/components/ui/InputDialog";
 
 interface TreeNode {
   name: string;
@@ -49,6 +50,7 @@ function buildTree(notes: { path: string; title: string; id: string }[]): TreeNo
 
 export function FileTree() {
   const [notes, setNotes] = useState<{ id: string; path: string; title: string }[]>([]);
+  const [newNoteOpen, setNewNoteOpen] = useState(false);
   const openTab = useTabStore((s) => s.openTab);
   const loadNote = useNoteStore((s) => s.loadNote);
 
@@ -65,9 +67,7 @@ export function FileTree() {
     openTab({ noteId, title: note.title, path: note.path });
   };
 
-  const handleNewNote = async () => {
-    const name = prompt("笔记名（不含 .md）：");
-    if (!name) return;
+  const handleCreateNote = async (name: string) => {
     const path = `${name}.md`;
     const note = await api.notes.create({ path });
     setNotes((prev) => [...prev, { id: note.id, path: note.path, title: note.title }]);
@@ -80,7 +80,7 @@ export function FileTree() {
       <div className="flex items-center justify-between px-1 py-1">
         <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider">文件</span>
         <button
-          onClick={handleNewNote}
+          onClick={() => setNewNoteOpen(true)}
           className="text-xs text-accent hover:text-accent-hover transition-colors"
         >
           + 新建
@@ -93,6 +93,14 @@ export function FileTree() {
           <TreeNodeItem key={node.path} node={node} notes={notes} onOpen={handleOpen} />
         ))
       )}
+      <InputDialog
+        open={newNoteOpen}
+        onOpenChange={setNewNoteOpen}
+        title="新建笔记"
+        placeholder="笔记名（不含 .md）"
+        confirmLabel="创建"
+        onConfirm={handleCreateNote}
+      />
     </div>
   );
 }

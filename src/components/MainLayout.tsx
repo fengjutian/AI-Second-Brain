@@ -5,6 +5,7 @@ import { CommandPalette } from "@/components/CommandPalette";
 import { StatusBar } from "@/components/StatusBar";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useState } from "react";
+import { open } from "@tauri-apps/plugin-dialog";
 
 export function MainLayout() {
   const vaultPath = useSettingsStore((s) => s.vaultPath);
@@ -47,19 +48,40 @@ export function MainLayout() {
 }
 
 function VaultPrompt() {
+  const [loading, setLoading] = useState(false);
+  const openVault = useSettingsStore((s) => s.openVault);
+
+  const handleOpenVault = async () => {
+    try {
+      setLoading(true);
+      const selected = await open({
+        directory: true,
+        multiple: false,
+        title: "选择知识库文件夹",
+      });
+      if (selected && typeof selected === "string") {
+        // Extract folder name from path
+        const name = selected.split(/[/\\]/).filter(Boolean).pop() || "知识库";
+        openVault(selected, name);
+      }
+    } catch (e) {
+      console.error("Failed to open folder dialog:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
       <div className="text-center space-y-6">
         <h1 className="text-3xl font-bold">AI Second Brain</h1>
         <p className="text-zinc-500 dark:text-zinc-400">打开一个知识库开始使用</p>
         <button
-          className="px-6 py-3 bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors"
-          onClick={() => {
-            // TODO: open folder dialog via Tauri
-            alert("Tauri folder dialog — coming soon");
-          }}
+          className="px-6 py-3 bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors disabled:opacity-50"
+          onClick={handleOpenVault}
+          disabled={loading}
         >
-          打开知识库
+          {loading ? "打开中..." : "打开知识库"}
         </button>
       </div>
     </div>

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useSettingsStore, type Theme } from "@/stores/settingsStore";
 import { usePluginStore } from "@/stores/pluginStore";
 import { cn } from "@/lib/utils";
+import { InputDialog } from "@/components/ui/InputDialog";
 import { useState } from "react";
 
 // Static theme list — not recreated on every render
@@ -74,11 +75,9 @@ export function SettingsPage() {
 function ImportSection() {
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
-  const handleImport = async () => {
-    const path = prompt("请输入 Obsidian 仓库的路径：");
-    if (!path) return;
-
+  const handleImport = async (path: string) => {
     setImporting(true);
     setResult(null);
     try {
@@ -106,7 +105,7 @@ function ImportSection() {
         从 Obsidian 仓库导入所有 .md 笔记文件（跳过 .obsidian 等配置）
       </p>
       <button
-        onClick={handleImport}
+        onClick={() => setImportOpen(true)}
         disabled={importing}
         className="flex items-center gap-2 px-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50"
       >
@@ -116,6 +115,14 @@ function ImportSection() {
       {result && (
         <p className="text-sm text-zinc-600 dark:text-zinc-400">{result}</p>
       )}
+      <InputDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        title="导入 Obsidian 仓库"
+        placeholder="请输入 Obsidian 仓库的路径"
+        confirmLabel="导入"
+        onConfirm={handleImport}
+      />
     </div>
   );
 }
