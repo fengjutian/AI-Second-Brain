@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Folder, Search, Plus, Tags, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { FileTree } from "@/components/sidebar/FileTree";
+import { SearchPanel } from "@/components/search/SearchPanel";
 
 export function Sidebar() {
   const [activePane, setActivePane] = useState<"files" | "search" | "tags">("files");
@@ -42,7 +44,7 @@ export function Sidebar() {
 
       {/* Pane Content */}
       <div className="flex-1 overflow-y-auto p-2">
-        {activePane === "files" && <FileTree />}
+        {activePane === "files" && <FileTreePane />}
         {activePane === "search" && <SearchPane />}
         {activePane === "tags" && <TagsPane />}
       </div>
@@ -50,24 +52,12 @@ export function Sidebar() {
   );
 }
 
-function FileTree() {
-  return (
-    <div className="text-sm text-zinc-500 dark:text-zinc-400">
-      <p className="p-2">暂无笔记，点击 + 新建</p>
-    </div>
-  );
+function FileTreePane() {
+  return <FileTree />;
 }
 
 function SearchPane() {
-  return (
-    <div className="p-2">
-      <input
-        type="text"
-        placeholder="搜索笔记..."
-        className="w-full px-3 py-1.5 text-sm rounded-md bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 outline-none focus:border-accent transition-colors"
-      />
-    </div>
-  );
+  return <SearchPanel />;
 }
 
 function TagsPane() {

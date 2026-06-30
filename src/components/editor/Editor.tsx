@@ -1,9 +1,19 @@
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
+import Mention from "@tiptap/extension-mention";
 import { useNoteStore } from "@/stores/noteStore";
 import { useTabStore } from "@/stores/tabStore";
 import { useCallback, useEffect, useRef } from "react";
+import { wikiLinkSuggestion } from "@/components/editor/WikiLink";
+import { api } from "@/lib/api";
+
+const WikiLink = Mention.configure({
+  suggestion: wikiLinkSuggestion,
+  HTMLAttributes: {
+    class: "wiki-link",
+  },
+});
 
 interface EditorProps {
   tabId: string;
@@ -14,17 +24,26 @@ export function Editor({ tabId, noteId }: EditorProps) {
   const note = useNoteStore((s) => s.notes.get(noteId));
   const setContent = useNoteStore((s) => s.setContent);
   const setDirty = useTabStore((s) => s.setDirty);
+  const updateTitle = useTabStore((s) => s.updateTitle);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
-      Placeholder.configure({
-        placeholder: "开始书写...",
+      StarterKit.configure({
+        heading: { levels: [1, 2, 3] },
       }),
+      Placeholder.configure({
+        placeholder: "开始书写... [[链接]]  #标签",
+      }),
+      WikiLink,
     ],
     content: note?.content || "",
     autofocus: false,
+    editorProps: {
+      attributes: {
+        class: "tiptap outline-none min-h-full",
+      },
+    },
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
       setContent(noteId, html);
@@ -32,9 +51,13 @@ export function Editor({ tabId, noteId }: EditorProps) {
 
       // Debounced auto-save
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = setTimeout(() => {
-        // TODO: call api.notes.update(noteId, { content: html })
-        setDirty(tabId, false);
+      saveTimerRef.current = setTimeout(async () => {
+        try {
+          await api.notes.update(noteId, { content: html });
+          setDirty(tabId, false);
+        } catch {
+          // Backend not available — will retry
+        }
       }, 1000);
     },
   });
@@ -56,23 +79,33 @@ export function Editor({ tabId, noteId }: EditorProps) {
     };
   }, []);
 
+  const handleTitleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newTitle = e.target.value;
+      updateTitle(tabId, newTitle);
+      // TODO: update frontmatter via API
+    },
+    [tabId, updateTitle]
+  );
+
   if (!editor) return null;
 
   return (
-    <div className="h-full overflow-y-auto">
+    <div className="h-full overflow-y-auto relative">
       <div className="max-w-3xl mx-auto py-8 px-4">
-        {/* Title (editable plain text) */}
+        {/* Title */}
         <input
           type="text"
           value={note?.title || ""}
           placeholder="笔记标题"
+          onChange={handleTitleChange}
           className="w-full text-3xl font-bold bg-transparent outline-none mb-4 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-300 dark:placeholder:text-zinc-600"
-          onChange={(e) => {
-            // TODO: update title
-          }}
         />
-        {/* Content */}
-        <EditorContent editor={editor} className="tiptap" />
+
+        {/* Editor */}
+        <div className="relative">
+          <EditorContent editor={editor} />
+        </div>
       </div>
     </div>
   );
