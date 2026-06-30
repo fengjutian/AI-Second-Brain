@@ -1,4 +1,4 @@
-const BASE = "http://localhost:8710/api/v1";
+const BASE = "/api/v1";
 
 class ApiError extends Error {
   status: number;
@@ -46,6 +46,11 @@ export const api = {
   graph: {
     global: () => request<any>("/graph"),
     local: (id: string, depth = 1) => request<any>(`/graph/${id}/local?depth=${depth}`),
+  },
+  vaults: {
+    get: () => request<any>("/vaults"),
+    open: (path: string) =>
+      request<any>("/vaults/open", { method: "POST", body: JSON.stringify({ path }) }),
   },
 };
 

@@ -16,6 +16,12 @@ export default defineConfig({
     watch: {
       ignored: ["**/src-tauri/**", "**/backend/**"],
     },
+    proxy: {
+      "/api": {
+        target: "http://localhost:8710",
+        changeOrigin: true,
+      },
+    },
   },
   envPrefix: ["VITE_", "TAURI_"],
   build: {

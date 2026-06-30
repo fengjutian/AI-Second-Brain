@@ -20,6 +20,7 @@ from api.chat import router as chat_router
 from api.graph import router as graph_router
 from api.daily import router as daily_router
 from api.import_api import router as import_router
+from config import get_ai_config, set_ai_config
 
 # ---- WebSocket Manager ----
 class ConnectionManager:
@@ -99,6 +100,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:1420",
+        "http://127.0.0.1:1420",
         "tauri://localhost",
         "https://tauri.localhost",
     ],
@@ -107,6 +109,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from fastapi.responses import JSONResponse
+from starlette.requests import Request
+
+@app.exception_handler(Exception)
+async def catch_all_handler(request: Request, exc: Exception):
+    """Ensure CORS headers on all error responses."""
+    import traceback
+    traceback.print_exception(type(exc), exc, exc.__traceback__)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": str(exc)},
+    )
+
+
 # ---- Routers ----
 app.include_router(notes_router, prefix="/api/v1")
 app.include_router(search_router, prefix="/api/v1")
@@ -114,6 +130,19 @@ app.include_router(chat_router, prefix="/api/v1")
 app.include_router(graph_router, prefix="/api/v1")
 app.include_router(daily_router, prefix="/api/v1")
 app.include_router(import_router, prefix="/api/v1")
+
+
+# ---- Config ----
+@app.get("/api/v1/config/ai")
+async def get_ai_config_endpoint():
+    """Get AI configuration."""
+    return get_ai_config()
+
+
+@app.put("/api/v1/config/ai")
+async def set_ai_config_endpoint(data: dict):
+    """Update AI configuration (partial update)."""
+    return set_ai_config(data)
 
 
 # ---- Vault Management ----
@@ -146,13 +175,19 @@ async def open_vault(data: dict):
     result = scan_vault(conn, path)
     conn.close()
 
-    # Initialize AI engines
+    # Initialize AI engines using persisted config
     try:
-        emb_engine = EmbeddingEngine(path, provider="local")
-        rag_engine = RAGEngine(emb_engine, llm_provider="local")
+        ai_cfg = get_ai_config()
+        emb_provider = ai_cfg.get("embedding_provider", "local")
+        emb_model = ai_cfg.get("embedding_model") or None
+        llm_provider = ai_cfg.get("llm_provider", "local")
+        llm_model = ai_cfg.get("llm_model") or None
+
+        emb_engine = EmbeddingEngine(path, provider=emb_provider, model_name=emb_model)
+        rag_engine = RAGEngine(emb_engine, llm_provider=llm_provider, llm_model=llm_model, base_url=ai_cfg.get("ollama_base_url") or None)
         shared.set_embedding_engine(emb_engine)
         shared.set_rag_engine(rag_engine)
-        print(f"[startup] AI engines ready — embeddings: {emb_engine.provider}, LLM: {rag_engine.llm_provider}")
+        print(f"[startup] AI engines ready — embeddings: {emb_engine.provider}/{emb_engine.model_name}, LLM: {rag_engine.llm_provider}/{rag_engine.llm_model}")
     except Exception as e:
         print(f"[startup] AI engines not available: {e}")
         shared.set_embedding_engine(None)

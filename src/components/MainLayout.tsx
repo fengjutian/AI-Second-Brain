@@ -4,6 +4,7 @@ import { RightSidebar } from "@/components/sidebar/RightSidebar";
 import { CommandPalette } from "@/components/CommandPalette";
 import { StatusBar } from "@/components/StatusBar";
 import { useSettingsStore } from "@/stores/settingsStore";
+import { api } from "@/lib/api";
 import { useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 
@@ -60,6 +61,8 @@ function VaultPrompt() {
         title: "选择知识库文件夹",
       });
       if (selected && typeof selected === "string") {
+        // Notify backend to initialize the vault
+        await api.vaults.open(selected);
         // Extract folder name from path
         const name = selected.split(/[/\\]/).filter(Boolean).pop() || "知识库";
         openVault(selected, name);

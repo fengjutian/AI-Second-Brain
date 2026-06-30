@@ -1,6 +1,7 @@
 import { ReactRenderer } from "@tiptap/react";
 import tippy from "tippy.js";
 import type { SuggestionOptions, SuggestionProps } from "@tiptap/suggestion";
+import { PluginKey } from "@tiptap/pm/state";
 import { api } from "@/lib/api";
 
 // Note cache
@@ -109,7 +110,7 @@ WikiLinkList.displayName = "WikiLinkList";
 export const wikiLinkSuggestion: Omit<SuggestionOptions<WikiLinkItem>, "editor"> = {
   char: "[[",
   allowSpaces: true,
-  pluginKey: "wiki-link-suggestion",
+  pluginKey: new PluginKey("wiki-link-suggestion"),
 
   items: async ({ query }) => {
     await loadCache();

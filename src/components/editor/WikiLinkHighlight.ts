@@ -48,13 +48,14 @@ export const WikiLinkHighlight = Extension.create({
 
   addProseMirrorPlugins() {
     const options = this.options;
+    const pluginKey = new PluginKey("wikiLinkHighlight");
     let currentTarget: string | null = null;
     let tooltipInstance: any = null;
     let hideTimer: ReturnType<typeof setTimeout> | null = null;
 
     return [
       new Plugin({
-        key: new PluginKey("wikiLinkHighlight"),
+        key: pluginKey,
         state: {
           init(_, { doc }) {
             return findWikiLinks(doc);
@@ -68,8 +69,7 @@ export const WikiLinkHighlight = Extension.create({
         },
         props: {
           decorations(state) {
-            const key = (this as any).key as PluginKey<any>;
-            return key.getState(state);
+            return pluginKey.getState(state);
           },
           handleDOMEvents: {
             mouseover(view, event) {

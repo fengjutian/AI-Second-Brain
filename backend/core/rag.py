@@ -19,10 +19,12 @@ class RAGEngine:
         embeddings_engine: EmbeddingEngine,
         llm_provider: str = "local",    # "local" (Ollama) | "openai"
         llm_model: str = None,
+        base_url: str = None,           # override Ollama endpoint
     ):
         self.embeddings = embeddings_engine
         self.llm_provider = llm_provider
         self.llm_model = llm_model or self._default_llm()
+        self._base_url = base_url
         self._llm_client = None
 
     def _default_llm(self) -> str:
@@ -42,8 +44,9 @@ class RAGEngine:
             # Ollama — use OpenAI-compatible endpoint
             if not HAS_OPENAI:
                 raise RuntimeError("openai not installed (needed for Ollama client)")
+            url = self._base_url or os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434/v1")
             self._llm_client = AsyncOpenAI(
-                base_url=os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434/v1"),
+                base_url=url,
                 api_key="ollama",  # Ollama doesn't require a real key
             )
         else:
