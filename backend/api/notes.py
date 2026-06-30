@@ -54,7 +54,7 @@ async def update_existing_note(note_id: str, data: NoteUpdate):
         row = conn.execute("SELECT path FROM notes WHERE id = ?", (note_id,)).fetchone()
         if not row:
             raise HTTPException(404, f"Note {note_id} not found")
-        updated_id = update_note(conn, vault, row["path"], data["content"])
+        updated_id = update_note(conn, vault, row["path"], data.content)
         note = get_note(conn, vault, updated_id)
         return note
     finally:
@@ -89,7 +89,7 @@ async def rename_note(note_id: str, data: NotePathUpdate):
         os.makedirs(os.path.dirname(new_path), exist_ok=True)
         shutil.move(old_path, new_path)
 
-        conn.execute("UPDATE notes SET path = ? WHERE id = ?", (data["new_path"], note_id))
+        conn.execute("UPDATE notes SET path = ? WHERE id = ?", (data.new_path, note_id))
         conn.commit()
 
         note = get_note(conn, vault, note_id)
