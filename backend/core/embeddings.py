@@ -1,6 +1,7 @@
 """Embeddings engine — ChromaDB vector storage + embedding generation."""
 import os
 import json
+import threading
 import chromadb
 from chromadb.config import Settings
 from typing import Optional
@@ -29,6 +30,8 @@ class EmbeddingEngine:
         self.model_name = model_name or self._default_model()
         self._model = None
         self._client = None
+        self._load_lock = threading.Lock()
+        self._write_lock = threading.Lock()
 
         # ChromaDB persistence directory
         chroma_dir = os.path.join(vault_path, "data", "chroma")
@@ -49,9 +52,14 @@ class EmbeddingEngine:
         return "text-embedding-3-small"  # OpenAI
 
     def _load_model(self):
-        """Lazy-load the embedding model."""
-        if self._model is not None:
+        """Lazy-load the embedding model (thread-safe)."""
+        if self._model is not None or self._client is not None:
             return
+
+        with self._load_lock:
+            # Double-check inside lock
+            if self._model is not None or self._client is not None:
+                return
 
         if self.provider == "local":
             if not HAS_LOCAL_EMBEDDINGS:
@@ -80,34 +88,33 @@ class EmbeddingEngine:
             return [d.embedding for d in resp.data]
 
     def index_note(self, note_id: str, title: str, content: str, tags: list[str] = None, updated: str = ""):
-        """Index or update a single note in ChromaDB."""
-        # Build searchable text: title + content
+        """Index or update a single note in ChromaDB (thread-safe)."""
         document = f"{title}\n\n{content}"
-
-        # Remove existing entry if present
-        existing = self.collection.get(ids=[note_id])
-        if existing and existing["ids"]:
-            self.collection.delete(ids=[note_id])
-
         embedding = self.embed([document])[0]
 
-        self.collection.add(
-            ids=[note_id],
-            embeddings=[embedding],
-            documents=[document],
-            metadatas=[{
-                "title": title,
-                "tags": ",".join(tags) if tags else "",
-                "updated": updated,
-            }],
-        )
+        with self._write_lock:
+            existing = self.collection.get(ids=[note_id])
+            if existing and existing["ids"]:
+                self.collection.delete(ids=[note_id])
+
+            self.collection.add(
+                ids=[note_id],
+                embeddings=[embedding],
+                documents=[document],
+                metadatas=[{
+                    "title": title,
+                    "tags": ",".join(tags) if tags else "",
+                    "updated": updated,
+                }],
+            )
 
     def delete_note(self, note_id: str):
-        """Remove a note from ChromaDB."""
-        try:
-            self.collection.delete(ids=[note_id])
-        except Exception:
-            pass
+        """Remove a note from ChromaDB (thread-safe)."""
+        with self._write_lock:
+            try:
+                self.collection.delete(ids=[note_id])
+            except Exception:
+                pass
 
     def semantic_search(self, query: str, limit: int = 10) -> list[dict]:
         """Search notes semantically by query string."""

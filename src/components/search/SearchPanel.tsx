@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { Search, Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useNoteStore } from "@/stores/noteStore";
@@ -19,6 +19,7 @@ export function SearchPanel() {
   const [searched, setSearched] = useState(false);
   const loadNote = useNoteStore((s) => s.loadNote);
   const openTab = useTabStore((s) => s.openTab);
+  const requestIdRef = useRef(0);
 
   const handleSearch = useCallback(async (q: string) => {
     setQuery(q);
@@ -27,15 +28,24 @@ export function SearchPanel() {
       setSearched(false);
       return;
     }
+
+    const id = ++requestIdRef.current;
     setLoading(true);
     try {
       const data = await api.search.keyword(q);
-      setResults(data);
-      setSearched(true);
+      // Only apply if this is still the latest request
+      if (id === requestIdRef.current) {
+        setResults(data);
+        setSearched(true);
+      }
     } catch {
-      setResults([]);
+      if (id === requestIdRef.current) {
+        setResults([]);
+      }
     } finally {
-      setLoading(false);
+      if (id === requestIdRef.current) {
+        setLoading(false);
+      }
     }
   }, []);
 

@@ -1,17 +1,7 @@
-"""RAG Engine — Retrieval-Augmented Generation using LlamaIndex."""
+"""RAG Engine — Retrieval-Augmented Generation."""
 import os
 from typing import AsyncGenerator, Optional
 from core.embeddings import EmbeddingEngine
-
-# Try LlamaIndex
-try:
-    from llama_index.core import VectorStoreIndex, Document, Settings
-    from llama_index.core.node_parser import SentenceSplitter
-    from llama_index.core.retrievers import VectorIndexRetriever
-    from llama_index.llms.openai import OpenAI as LlamaOpenAI
-    HAS_LLAMAINDEX = True
-except ImportError:
-    HAS_LLAMAINDEX = False
 
 # Try OpenAI for chat
 try:

@@ -23,6 +23,10 @@ class NoteUpdate(BaseModel):
     content: str
 
 
+class NotePathUpdate(BaseModel):
+    new_path: str
+
+
 class SearchResult(BaseModel):
     note_id: str
     path: str

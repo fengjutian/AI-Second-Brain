@@ -28,6 +28,8 @@ export const api = {
       request<any>(`/notes/${id}`, { method: "PUT", body: JSON.stringify(body) }),
     delete: (id: string) =>
       request<void>(`/notes/${id}`, { method: "DELETE" }),
+    outgoingLinks: (id: string) => request<any[]>(`/notes/${id}/links/outgoing`),
+    backlinks: (id: string) => request<any[]>(`/notes/${id}/links/backlinks`),
   },
   search: {
     keyword: (q: string) => request<any[]>(`/search?q=${encodeURIComponent(q)}`),
@@ -36,12 +38,12 @@ export const api = {
   chat: {
     send: (messages: { role: string; content: string }[]) =>
       request<any>("/chat", { method: "POST", body: JSON.stringify({ messages }) }),
-    outgoingLinks: (id: string) => request<any[]>(`/notes/${id}/links/outgoing`),
-    backlinks: (id: string) => request<any[]>(`/notes/${id}/links/backlinks`),
   },
+  daily: {
     today: () => request<any>("/daily/today"),
     get: (dateStr: string) => request<any>(`/daily/${dateStr}`),
   },
+  graph: {
     global: () => request<any>("/graph"),
     local: (id: string, depth = 1) => request<any>(`/graph/${id}/local?depth=${depth}`),
   },

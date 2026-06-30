@@ -33,8 +33,14 @@ export function RightSidebar() {
       setBacklinks([]);
       return;
     }
-    api.notes.outgoingLinks(currentId).then(setOutgoing).catch(() => {});
-    api.notes.backlinks(currentId).then(setBacklinks).catch(() => {});
+    let cancelled = false;
+    api.notes.outgoingLinks(currentId).then((data) => {
+      if (!cancelled) setOutgoing(data);
+    }).catch(() => {});
+    api.notes.backlinks(currentId).then((data) => {
+      if (!cancelled) setBacklinks(data);
+    }).catch(() => {});
+    return () => { cancelled = true; };
   }, [currentId]);
 
   const handleOpenLink = async (item: LinkItem) => {

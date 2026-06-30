@@ -7,6 +7,11 @@ import { api } from "@/lib/api";
 let noteCache: { id: string; title: string; path: string; aliases: string[] }[] = [];
 let cacheLoaded = false;
 
+export function resetWikiLinkCache() {
+  noteCache = [];
+  cacheLoaded = false;
+}
+
 async function loadCache() {
   if (cacheLoaded) return;
   try {

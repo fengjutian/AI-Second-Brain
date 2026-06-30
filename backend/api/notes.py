@@ -7,6 +7,7 @@ from core.indexer import (
     get_note, list_notes, create_note, update_note, delete_note, get_links,
 )
 from data.database import connect, init_db
+from models.schemas import NoteCreate, NoteUpdate, NotePathUpdate
 
 router = APIRouter(prefix="/notes", tags=["notes"])
 
@@ -55,7 +56,7 @@ async def create_new_note(data: dict):
 
 
 @router.put("/{note_id}")
-async def update_existing_note(note_id: str, data: dict):
+async def update_existing_note(note_id: str, data: NoteUpdate):
     vault = shared.get_vault_path()
     conn = _get_conn()
     try:
@@ -84,7 +85,7 @@ async def delete_existing_note(note_id: str):
 
 
 @router.patch("/{note_id}/rename")
-async def rename_note(note_id: str, data: dict):
+async def rename_note(note_id: str, data: NotePathUpdate):
     vault = shared.get_vault_path()
     conn = _get_conn()
     try:
@@ -93,7 +94,7 @@ async def rename_note(note_id: str, data: dict):
             raise HTTPException(404, f"Note {note_id} not found")
 
         old_path = os.path.join(vault, row["path"])
-        new_path = os.path.join(vault, data["new_path"])
+        new_path = os.path.join(vault, data.new_path)
         os.makedirs(os.path.dirname(new_path), exist_ok=True)
         shutil.move(old_path, new_path)
 

@@ -16,6 +16,14 @@ export function ChatPanel() {
   const [streaming, setStreaming] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, []);
 
   // Auto-scroll
   useEffect(() => {
@@ -27,6 +35,11 @@ export function ChatPanel() {
   const handleSend = async () => {
     const text = input.trim();
     if (!text || loading) return;
+
+    // Abort any in-flight request
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     const userMsg: Message = { role: "user", content: text };
     setMessages((prev) => [...prev, userMsg]);
@@ -44,6 +57,7 @@ export function ChatPanel() {
             content: m.content,
           })),
         }),
+        signal: controller.signal,
       });
 
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
