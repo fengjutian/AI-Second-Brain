@@ -51,6 +51,16 @@ export const api = {
     get: () => request<any>("/vaults"),
     open: (path: string) =>
       request<any>("/vaults/open", { method: "POST", body: JSON.stringify({ path }) }),
+    recent: () => request<{ recent: any[] }>("/vaults/recent"),
+    removeRecent: (path: string) =>
+      request<void>(`/vaults/recent/${encodeURIComponent(path)}`, { method: "DELETE" }),
+  },
+  config: {
+    ai: {
+      get: () => request<any>("/config/ai"),
+      set: (updates: Record<string, any>) =>
+        request<any>("/config/ai", { method: "PUT", body: JSON.stringify(updates) }),
+    },
   },
 };
 

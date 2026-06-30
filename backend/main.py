@@ -21,6 +21,7 @@ from api.graph import router as graph_router
 from api.daily import router as daily_router
 from api.import_api import router as import_router
 from config import get_ai_config, set_ai_config
+import session as app_session
 
 # ---- WebSocket Manager ----
 class ConnectionManager:
@@ -64,12 +65,7 @@ def on_file_change(note_id: str, event_type: str):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown logic."""
-    vault_path = None
-    session_file = os.path.join(os.path.dirname(__file__), ".session")
-    if os.path.exists(session_file):
-        with open(session_file) as f:
-            data = json.load(f)
-            vault_path = data.get("vault_path")
+    vault_path = app_session.get_current()
 
     if vault_path and os.path.isdir(vault_path):
         shared.set_vault_path(vault_path)
@@ -148,26 +144,47 @@ async def set_ai_config_endpoint(data: dict):
 # ---- Vault Management ----
 @app.get("/api/v1/vaults")
 async def get_vault():
-    """Get current vault info."""
+    """Get current vault info + recent list."""
     path = shared.get_vault_path()
+    recent = app_session.get_recent()
     if not path:
-        return {"path": None, "name": None}
-    return {"path": path, "name": os.path.basename(path)}
+        return {"path": None, "name": None, "recent": recent}
+    return {"path": path, "name": os.path.basename(path), "recent": recent}
+
+
+@app.get("/api/v1/vaults/recent")
+async def get_recent_vaults():
+    """Get the list of recently opened vaults."""
+    return {"recent": app_session.get_recent()}
+
+
+@app.delete("/api/v1/vaults/recent/{path:path}")
+async def remove_recent_vault(path: str):
+    """Remove a vault from the recent list."""
+    from urllib.parse import unquote
+    app_session.remove_recent(unquote(path))
+    return {"ok": True}
 
 
 @app.post("/api/v1/vaults/open")
 async def open_vault(data: dict):
-    """Open or create a vault."""
+    """Open or switch to a vault."""
     path = data["path"]
     if not os.path.isdir(path):
         os.makedirs(path, exist_ok=True)
 
+    # If switching vaults, tear down old one first
+    old_path = shared.get_vault_path()
+    if old_path and old_path != path:
+        stop_watcher()
+        plugin_manager.deactivate_all()
+        shared.set_embedding_engine(None)
+        shared.set_rag_engine(None)
+
     shared.set_vault_path(path)
 
     # Persist session
-    session_file = os.path.join(os.path.dirname(__file__), ".session")
-    with open(session_file, "w") as f:
-        json.dump({"vault_path": path}, f)
+    app_session.set_current(path)
 
     # Initialize and scan
     conn = connect(path)
