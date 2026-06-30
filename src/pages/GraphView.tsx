@@ -86,13 +86,13 @@ export function GraphView() {
     <div className="h-screen flex flex-col">
       <div className="h-12 flex items-center px-4 gap-3 border-b border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950">
         <button onClick={() => navigate("/")} className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800">
-          <FaArrowLeft size={18} />
+          <FaArrowLeft size={18} className="text-zinc-400" />
         </button>
         <span className="font-medium">知识图谱</span>
       </div>
       {loading && (
         <div className="flex items-center justify-center py-8 gap-2 text-sm text-zinc-400">
-          <FaSpinner size={16} className="animate-spin" />
+          <FaSpinner size={16} className="animate-spin text-blue-500" />
           加载图谱...
         </div>
       )}

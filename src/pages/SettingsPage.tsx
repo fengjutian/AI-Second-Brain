@@ -38,7 +38,7 @@ export function SettingsPage() {
       {/* Header */}
       <div className="h-12 flex items-center px-4 gap-3 border-b border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950">
         <button onClick={() => navigate("/")} className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800">
-          <FaArrowLeft size={18} />
+          <FaArrowLeft size={18} className="text-zinc-400" />
         </button>
         <span className="font-medium">设置</span>
       </div>
@@ -184,7 +184,7 @@ function GeneralSection() {
           disabled={opening}
           className="mt-3 flex items-center gap-2 px-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50"
         >
-          <FaFolderOpen size={16} />
+          <FaFolderOpen size={16} className="text-sky-500" />
           {opening ? "打开中..." : vaultPath ? "切换到其他知识库" : "打开知识库"}
         </button>
       </section>
@@ -277,7 +277,7 @@ function AiSection() {
   if (loading || !aiConfig) {
     return (
       <div className="flex items-center gap-2 text-sm text-zinc-400">
-        <FaSpinner size={16} className="animate-spin" />
+        <FaSpinner size={16} className="animate-spin text-blue-500" />
         加载中...
       </div>
     );
@@ -388,7 +388,7 @@ function AiSection() {
       <div className="flex items-center gap-2 text-sm">
         {saving && (
           <span className="flex items-center gap-1 text-zinc-400">
-            <FaSpinner size={14} className="animate-spin" />
+            <FaSpinner size={14} className="animate-spin text-blue-500" />
             保存中...
           </span>
         )}
@@ -445,7 +445,7 @@ function PluginSection() {
             )}
             title={entry.enabled ? "停用" : "启用"}
           >
-            {entry.enabled ? <FaPowerOff size={16} /> : <FaPowerOffOff size={16} />}
+            {entry.enabled ? <FaPowerOff size={16} className="text-green-500" /> : <FaPowerOff size={16} className="text-zinc-300 dark:text-zinc-600" />}
           </button>
         </div>
       ))}
@@ -492,7 +492,7 @@ function ImportSection() {
         disabled={importing}
         className="flex items-center gap-2 px-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50"
       >
-        {importing ? <FaSpinner size={16} className="animate-spin" /> : <FaUpload size={16} />}
+        {importing ? <FaSpinner size={16} className="animate-spin text-blue-500" /> : <FaUpload size={16} className="text-accent" />}
         导入 Obsidian 仓库
       </button>
       {result && (

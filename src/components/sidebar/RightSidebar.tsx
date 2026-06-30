@@ -67,7 +67,7 @@ export function RightSidebar() {
         className="w-8 border-l border-zinc-200 dark:border-zinc-700 flex items-start justify-center pt-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shrink-0"
         onClick={() => setCollapsed(false)}
       >
-        <FaArrowLeft size={14} />
+        <FaArrowLeft size={14} className="text-zinc-400" />
       </button>
     );
   }
@@ -96,7 +96,7 @@ export function RightSidebar() {
           className="p-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
           onClick={() => setCollapsed(true)}
         >
-          <ArrowRight size={14} />
+          <FaArrowRight size={14} className="text-zinc-400" />
         </button>
       </div>
 

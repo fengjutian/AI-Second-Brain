@@ -15,7 +15,7 @@ interface SearchResult {
 export function SearchPanel() {
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [results, setResults] = useState<FaMagnifyingGlassResult[]>([]);
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const loadNote = useNoteStore((s) => s.loadNote);

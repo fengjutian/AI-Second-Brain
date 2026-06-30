@@ -184,7 +184,7 @@ export function ChatPanel() {
             disabled={!input.trim() || loading}
             className="px-3 py-1.5 bg-accent text-white rounded-md hover:bg-accent-hover disabled:opacity-50 transition-colors"
           >
-            {loading ? <FaSpinner size={16} className="animate-spin" /> : <FaPaperPlane size={16} />}
+            {loading ? <FaSpinner size={16} className="animate-spin text-blue-500" /> : <FaPaperPlane size={16} className="text-accent" />}
           </button>
         </div>
       </div>

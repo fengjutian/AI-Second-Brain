@@ -182,8 +182,8 @@ const TreeNodeItem = memo(function TreeNodeItem({
           style={{ paddingLeft: `${depth * 12 + 4}px` }}
           onClick={() => setExpanded(!expanded)}
         >
-          {expanded ? <FaChevronDown size={12} /> : <FaChevronRight size={12} />}
-          {expanded ? <FaFolderOpen size={12} /> : <FaFolder size={12} />}
+          {expanded ? <FaChevronDown size={12} className="text-zinc-400" /> : <FaChevronRight size={12} className="text-zinc-400" />}
+          {expanded ? <FaFolderOpen size={12} className="text-sky-500" /> : <FaFolder size={12} className="text-sky-500" />}
           <span className="truncate">{node.name}</span>
         </button>
         {expanded &&
@@ -210,7 +210,7 @@ const TreeNodeItem = memo(function TreeNodeItem({
         style={{ paddingLeft: `${depth * 12 + 4}px` }}
         onClick={() => note && onOpen(note.id, node.path)}
       >
-        <FaFile size={12} className="shrink-0" />
+        <FaFile size={12} className="shrink-0 text-sky-400" />
         <span className="truncate">{node.name.replace(/\.md$/, "")}</span>
       </button>
       {/* Delete button — visible on hover */}
@@ -222,7 +222,7 @@ const TreeNodeItem = memo(function TreeNodeItem({
           if (note) onDelete(note.id);
         }}
       >
-        <FaTrashCan size={12} />
+        <FaTrashCan size={12} className="text-red-400 hover:text-red-500" />
       </button>
     </div>
   );

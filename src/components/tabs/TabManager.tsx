@@ -46,7 +46,7 @@ export function TabManager() {
                 closeTab(tab.id);
               }}
             >
-              <FaXmark size={12} />
+              <FaXmark size={12} className="text-zinc-400" />
             </button>
           </div>
         ))}

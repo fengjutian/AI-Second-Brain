@@ -41,7 +41,7 @@ export function MainLayout() {
           className="flex items-center gap-1 px-2 py-0.5 rounded text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
           title="知识图谱"
         >
-          <FaCodeBranch size={14} />
+          <FaCodeBranch size={14} className="text-amber-500" />
           图谱
         </button>
       </div>
@@ -135,7 +135,7 @@ function VaultSwitcher() {
         className="flex items-center gap-1 px-2 py-0.5 rounded text-xs text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
       >
         {switching ? "切换中..." : "切换"}
-        <FaChevronDown size={12} className={cn("transition-transform", open_ && "rotate-180")} />
+        <FaChevronDown size={12} className={cn("transition-transform text-zinc-400", open_ && "rotate-180")} />
       </button>
 
       {open_ && (
