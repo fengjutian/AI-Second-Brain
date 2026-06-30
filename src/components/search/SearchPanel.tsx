@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import { Search, Loader2 } from "lucide-react";
+import { FaMagnifyingGlass, FaSpinner } from "react-icons/fa6";
 import { api } from "@/lib/api";
 import { useNoteStore } from "@/stores/noteStore";
 import { useTabStore } from "@/stores/tabStore";
@@ -15,7 +15,7 @@ interface SearchResult {
 export function SearchPanel() {
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [results, setResults] = useState<SearchResult[]>([]);
+  const [results, setResults] = useState<FaMagnifyingGlassResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const loadNote = useNoteStore((s) => s.loadNote);
@@ -75,7 +75,7 @@ export function SearchPanel() {
   return (
     <div className="space-y-2">
       <div className="relative">
-        <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+        <FaMagnifyingGlass size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400" />
         <input
           type="text"
           value={query}
@@ -87,7 +87,7 @@ export function SearchPanel() {
 
       {loading && (
         <div className="flex justify-center py-3">
-          <Loader2 size={16} className="animate-spin text-zinc-400" />
+          <FaSpinner size={16} className="animate-spin text-zinc-400" />
         </div>
       )}
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowRight, ArrowLeft, MessageCircle } from "lucide-react";
+import { FaArrowRight, FaArrowLeft, FaComment } from "react-icons/fa6";
 import { cn } from "@/lib/utils";
 import { ChatPanel } from "@/components/chat/ChatPanel";
 import { useNoteStore } from "@/stores/noteStore";
@@ -9,10 +9,10 @@ import { api } from "@/lib/api";
 type Pane = "outgoing" | "backlinks" | "tags" | "ai";
 
 // Static tabs list — not recreated on every render
-const paneTabs: { id: Pane; label: string; icon?: typeof MessageCircle }[] = [
+const paneTabs: { id: Pane; label: string; icon?: typeof FaComment }[] = [
   { id: "outgoing", label: "出链" },
   { id: "backlinks", label: "反链" },
-  { id: "ai", label: "AI", icon: MessageCircle },
+  { id: "ai", label: "AI", icon: FaComment },
 ];
 
 interface LinkItem {
@@ -67,7 +67,7 @@ export function RightSidebar() {
         className="w-8 border-l border-zinc-200 dark:border-zinc-700 flex items-start justify-center pt-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shrink-0"
         onClick={() => setCollapsed(false)}
       >
-        <ArrowLeft size={14} />
+        <FaArrowLeft size={14} />
       </button>
     );
   }

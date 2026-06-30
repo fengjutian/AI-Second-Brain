@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, memo, useCallback, useRef } from "react";
-import { File, Folder, FolderOpen, ChevronRight, ChevronDown, Trash2 } from "lucide-react";
+import { FaFile, FaFolder, FaFolderOpen, FaChevronRight, FaChevronDown, FaTrashCan } from "react-icons/fa6";
 import { api } from "@/lib/api";
 import { useTabStore } from "@/stores/tabStore";
 import { useNoteStore } from "@/stores/noteStore";
@@ -182,8 +182,8 @@ const TreeNodeItem = memo(function TreeNodeItem({
           style={{ paddingLeft: `${depth * 12 + 4}px` }}
           onClick={() => setExpanded(!expanded)}
         >
-          {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-          {expanded ? <FolderOpen size={12} /> : <Folder size={12} />}
+          {expanded ? <FaChevronDown size={12} /> : <FaChevronRight size={12} />}
+          {expanded ? <FaFolderOpen size={12} /> : <FaFolder size={12} />}
           <span className="truncate">{node.name}</span>
         </button>
         {expanded &&
@@ -210,7 +210,7 @@ const TreeNodeItem = memo(function TreeNodeItem({
         style={{ paddingLeft: `${depth * 12 + 4}px` }}
         onClick={() => note && onOpen(note.id, node.path)}
       >
-        <File size={12} className="shrink-0" />
+        <FaFile size={12} className="shrink-0" />
         <span className="truncate">{node.name.replace(/\.md$/, "")}</span>
       </button>
       {/* Delete button — visible on hover */}
@@ -222,7 +222,7 @@ const TreeNodeItem = memo(function TreeNodeItem({
           if (note) onDelete(note.id);
         }}
       >
-        <Trash2 size={12} />
+        <FaTrashCan size={12} />
       </button>
     </div>
   );

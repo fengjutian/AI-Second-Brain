@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { Search, FilePlus, GitGraph, Settings, Calendar, Puzzle, Trash2 } from "lucide-react";
+import { FaMagnifyingGlass, FaFileCirclePlus, FaCodeBranch, FaGear, FaCalendar, FaPuzzlePiece, FaTrashCan } from "react-icons/fa6";
 import { useTabStore } from "@/stores/tabStore";
 import { useNavigate } from "react-router-dom";
 import { getRegisteredCommands } from "@/stores/pluginStore";
@@ -7,7 +7,7 @@ import { getRegisteredCommands } from "@/stores/pluginStore";
 interface Command {
   id: string;
   label: string;
-  icon: typeof Search;
+  icon: typeof FaMagnifyingGlass;
   action: () => void;
 }
 
@@ -27,7 +27,7 @@ export function CommandPalette({ onClose }: CommandPaletteProps) {
     {
       id: "new-note",
       label: "新建笔记",
-      icon: FilePlus,
+      icon: FaFileCirclePlus,
       action: () => {
         openTab({ noteId: `new-${Date.now()}`, title: "未命名", path: "" });
         onClose();
@@ -36,7 +36,7 @@ export function CommandPalette({ onClose }: CommandPaletteProps) {
     {
       id: "daily-note",
       label: "打开日记",
-      icon: Calendar,
+      icon: FaCalendar,
       action: async () => {
         try {
           const { api } = await import("@/lib/api");
@@ -53,19 +53,19 @@ export function CommandPalette({ onClose }: CommandPaletteProps) {
     {
       id: "graph",
       label: "知识图谱",
-      icon: GitGraph,
+      icon: FaCodeBranch,
       action: () => { navigate("/graph"); onClose(); },
     },
     {
       id: "settings",
       label: "设置",
-      icon: Settings,
+      icon: FaGear,
       action: () => { navigate("/settings"); onClose(); },
     },
     {
       id: "delete-note",
       label: "删除当前笔记",
-      icon: Trash2,
+      icon: FaTrashCan,
       action: async () => {
         const { useNoteStore } = await import("@/stores/noteStore");
         const currentId = useNoteStore.getState().currentId;
@@ -87,7 +87,7 @@ export function CommandPalette({ onClose }: CommandPaletteProps) {
     ...getRegisteredCommands().map((cmd) => ({
       id: cmd.id,
       label: cmd.name,
-      icon: Puzzle,
+      icon: FaPuzzlePiece,
       action: () => { cmd.callback(); onClose(); },
     })),
   ], [openTab, navigate, onClose]);
@@ -121,7 +121,7 @@ export function CommandPalette({ onClose }: CommandPaletteProps) {
       <div className="fixed inset-0 bg-black/30" onClick={onClose} />
       <div className="relative w-full max-w-lg bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-zinc-200 dark:border-zinc-700 overflow-hidden">
         <div className="flex items-center px-4 border-b border-zinc-200 dark:border-zinc-700">
-          <Search size={18} className="text-zinc-400 mr-2" />
+          <FaMagnifyingGlass size={18} className="text-zinc-400 mr-2" />
           <input
             ref={inputRef}
             type="text"

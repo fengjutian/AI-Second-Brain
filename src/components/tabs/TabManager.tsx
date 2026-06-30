@@ -1,6 +1,6 @@
 import { useTabStore } from "@/stores/tabStore";
 import { Editor } from "@/components/editor/Editor";
-import { X } from "lucide-react";
+import { FaXmark } from "react-icons/fa6";
 import { cn } from "@/lib/utils";
 
 export function TabManager() {
@@ -46,7 +46,7 @@ export function TabManager() {
                 closeTab(tab.id);
               }}
             >
-              <X size={12} />
+              <FaXmark size={12} />
             </button>
           </div>
         ))}

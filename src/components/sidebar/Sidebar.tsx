@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Folder, Search, Plus, Tags, Star, Calendar, Settings } from "lucide-react";
+import { FaFolder, FaMagnifyingGlass, FaPlus, FaTags, FaStar, FaCalendar, FaGear } from "react-icons/fa6";
 import { cn } from "@/lib/utils";
 import { FileTree } from "@/components/sidebar/FileTree";
 import { SearchPanel } from "@/components/search/SearchPanel";
@@ -11,9 +11,9 @@ import { useNavigate } from "react-router-dom";
 
 // Static icons — not recreated on every render
 const paneIcons = [
-  { id: "files" as const, icon: Folder, label: "文件" },
-  { id: "search" as const, icon: Search, label: "搜索" },
-  { id: "tags" as const, icon: Tags, label: "标签" },
+  { id: "files" as const, icon: FaFolder, label: "文件" },
+  { id: "search" as const, icon: FaMagnifyingGlass, label: "搜索" },
+  { id: "tags" as const, icon: FaTags, label: "标签" },
 ];
 
 export function Sidebar() {
@@ -54,14 +54,14 @@ export function Sidebar() {
           title="新建笔记"
           onClick={() => setNewNoteOpen(true)}
         >
-          <Plus size={14} /> 新建
+          <FaPlus size={14} /> 新建
         </button>
         <button
           className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
           title="日记"
           onClick={openDaily}
         >
-          <Calendar size={14} /> 日记
+          <FaCalendar size={14} /> 日记
         </button>
       </div>
 
@@ -85,7 +85,7 @@ export function Sidebar() {
       {/* Pane Content */}
       <div className="flex-1 overflow-y-auto p-2">
         {activePane === "files" && <FileTreePane />}
-        {activePane === "search" && <SearchPane />}
+        {activePane === "search" && <FaMagnifyingGlassPane />}
         {activePane === "tags" && <TagsPane />}
       </div>
 
@@ -95,7 +95,7 @@ export function Sidebar() {
         className="flex items-center gap-2 px-3 py-2 text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50 border-t border-zinc-200 dark:border-zinc-700 transition-colors"
         title="设置"
       >
-        <Settings size={14} />
+        <FaGear size={14} />
         设置
       </button>
 
@@ -116,7 +116,7 @@ function FileTreePane() {
 }
 
 function SearchPane() {
-  return <SearchPanel />;
+  return <FaMagnifyingGlassPanel />;
 }
 
 function TagsPane() {

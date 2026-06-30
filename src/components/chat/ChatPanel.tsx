@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Bot, User, Loader2 } from "lucide-react";
+import { FaPaperPlane, FaRobot, FaUser, FaSpinner } from "react-icons/fa6";
 import { cn } from "@/lib/utils";
 
 interface Message {
@@ -112,7 +112,7 @@ export function ChatPanel() {
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-200 dark:border-zinc-700">
         <div className="flex items-center gap-2 text-sm font-medium">
-          <Bot size={16} className="text-accent" />
+          <FaRobot size={16} className="text-accent" />
           AI 对话
         </div>
         <span className="text-xs text-zinc-400">RAG · 知识库问答</span>
@@ -122,7 +122,7 @@ export function ChatPanel() {
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-3">
         {messages.length === 0 && !loading && (
           <div className="text-center text-sm text-zinc-400 py-8">
-            <Bot size={32} className="mx-auto mb-2 text-zinc-300 dark:text-zinc-600" />
+            <FaRobot size={32} className="mx-auto mb-2 text-zinc-300 dark:text-zinc-600" />
             <p>向我提问，我会基于你的知识库回答</p>
           </div>
         )}
@@ -136,7 +136,7 @@ export function ChatPanel() {
             )}
           >
             {msg.role === "assistant" && (
-              <Bot size={16} className="mt-0.5 shrink-0 text-accent" />
+              <FaRobot size={16} className="mt-0.5 shrink-0 text-accent" />
             )}
             <div
               className={cn(
@@ -149,7 +149,7 @@ export function ChatPanel() {
               {msg.content}
             </div>
             {msg.role === "user" && (
-              <User size={16} className="mt-0.5 shrink-0 text-zinc-400" />
+              <FaUser size={16} className="mt-0.5 shrink-0 text-zinc-400" />
             )}
           </div>
         ))}
@@ -157,7 +157,7 @@ export function ChatPanel() {
         {/* Streaming indicator */}
         {streaming && (
           <div className="flex gap-2 text-sm">
-            <Bot size={16} className="mt-0.5 shrink-0 text-accent" />
+            <FaRobot size={16} className="mt-0.5 shrink-0 text-accent" />
             <div className="rounded-lg px-3 py-2 max-w-[85%] whitespace-pre-wrap break-words bg-zinc-100 dark:bg-zinc-800">
               {streaming}
               <span className="inline-block w-2 h-4 bg-accent animate-pulse ml-0.5 align-middle" />
@@ -184,7 +184,7 @@ export function ChatPanel() {
             disabled={!input.trim() || loading}
             className="px-3 py-1.5 bg-accent text-white rounded-md hover:bg-accent-hover disabled:opacity-50 transition-colors"
           >
-            {loading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+            {loading ? <FaSpinner size={16} className="animate-spin" /> : <FaPaperPlane size={16} />}
           </button>
         </div>
       </div>

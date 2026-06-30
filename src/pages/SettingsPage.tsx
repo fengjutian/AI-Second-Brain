@@ -1,7 +1,7 @@
 import {
-  ArrowLeft, Sun, Moon, Monitor, Upload, Loader2, Puzzle, Power, PowerOff,
-  Brain, FolderOpen, Trash2, Settings2, Package, Download,
-} from "lucide-react";
+  FaArrowLeft, FaSun, FaMoon, FaDisplay, FaUpload, FaSpinner, FaPuzzlePiece, FaPowerOff,
+  FaBrain, FaFolderOpen, FaTrashCan, FaGear, FaBox, FaDownload,
+} from "react-icons/fa6";
 import { useNavigate } from "react-router-dom";
 import { useSettingsStore, type Theme, type AiConfig } from "@/stores/settingsStore";
 import { usePluginStore } from "@/stores/pluginStore";
@@ -13,17 +13,17 @@ import { open } from "@tauri-apps/plugin-dialog";
 
 // ---- Constants ----
 
-const themes: { id: Theme; label: string; icon: typeof Sun }[] = [
-  { id: "light", label: "浅色", icon: Sun },
-  { id: "dark", label: "深色", icon: Moon },
-  { id: "system", label: "跟随系统", icon: Monitor },
+const themes: { id: Theme; label: string; icon: typeof FaSun }[] = [
+  { id: "light", label: "浅色", icon: FaSun },
+  { id: "dark", label: "深色", icon: FaMoon },
+  { id: "system", label: "跟随系统", icon: FaDisplay },
 ];
 
 const TABS = [
-  { id: "general", label: "常规", icon: Settings2 },
-  { id: "ai", label: "AI 设置", icon: Brain },
-  { id: "plugins", label: "插件", icon: Package },
-  { id: "import", label: "导入", icon: Download },
+  { id: "general", label: "常规", icon: FaGear },
+  { id: "ai", label: "AI 设置", icon: FaBrain },
+  { id: "plugins", label: "插件", icon: FaBox },
+  { id: "import", label: "导入", icon: FaDownload },
 ] as const;
 type TabId = (typeof TABS)[number]["id"];
 
@@ -38,7 +38,7 @@ export function SettingsPage() {
       {/* Header */}
       <div className="h-12 flex items-center px-4 gap-3 border-b border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950">
         <button onClick={() => navigate("/")} className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800">
-          <ArrowLeft size={18} />
+          <FaArrowLeft size={18} />
         </button>
         <span className="font-medium">设置</span>
       </div>
@@ -170,7 +170,7 @@ function GeneralSection() {
         <h3 className="text-sm font-medium mb-3">当前知识库</h3>
         {vaultPath ? (
           <div className="flex items-center gap-3 p-3 rounded-lg border border-zinc-200 dark:border-zinc-700">
-            <FolderOpen size={18} className="text-accent shrink-0" />
+            <FaFolderOpen size={18} className="text-accent shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{vaultName}</p>
               <p className="text-xs text-zinc-400 truncate">{vaultPath}</p>
@@ -184,7 +184,7 @@ function GeneralSection() {
           disabled={opening}
           className="mt-3 flex items-center gap-2 px-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50"
         >
-          <FolderOpen size={16} />
+          <FaFolderOpen size={16} />
           {opening ? "打开中..." : vaultPath ? "切换到其他知识库" : "打开知识库"}
         </button>
       </section>
@@ -209,7 +209,7 @@ function GeneralSection() {
                   onClick={() => handleSwitchVault(v.path, v.name)}
                   disabled={opening || v.path === vaultPath}
                 >
-                  <FolderOpen size={16} className="text-zinc-400 shrink-0" />
+                  <FaFolderOpen size={16} className="text-zinc-400 shrink-0" />
                   <div className="min-w-0">
                     <p className="text-sm truncate">{v.name}</p>
                     <p className="text-xs text-zinc-400 truncate">{v.path}</p>
@@ -220,7 +220,7 @@ function GeneralSection() {
                   className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all"
                   title="从列表中移除"
                 >
-                  <Trash2 size={14} className="text-zinc-400" />
+                  <FaTrashCan size={14} className="text-zinc-400" />
                 </button>
               </div>
             ))}
@@ -277,7 +277,7 @@ function AiSection() {
   if (loading || !aiConfig) {
     return (
       <div className="flex items-center gap-2 text-sm text-zinc-400">
-        <Loader2 size={16} className="animate-spin" />
+        <FaSpinner size={16} className="animate-spin" />
         加载中...
       </div>
     );
@@ -388,7 +388,7 @@ function AiSection() {
       <div className="flex items-center gap-2 text-sm">
         {saving && (
           <span className="flex items-center gap-1 text-zinc-400">
-            <Loader2 size={14} className="animate-spin" />
+            <FaSpinner size={14} className="animate-spin" />
             保存中...
           </span>
         )}
@@ -419,7 +419,7 @@ function PluginSection() {
           key={entry.manifest.id}
           className="flex items-center gap-3 p-3 rounded-lg border border-zinc-200 dark:border-zinc-700"
         >
-          <Puzzle size={16} className="text-accent shrink-0" />
+          <FaPuzzlePiece size={16} className="text-accent shrink-0" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium truncate">{entry.manifest.name}</span>
@@ -445,7 +445,7 @@ function PluginSection() {
             )}
             title={entry.enabled ? "停用" : "启用"}
           >
-            {entry.enabled ? <Power size={16} /> : <PowerOff size={16} />}
+            {entry.enabled ? <FaPowerOff size={16} /> : <FaPowerOffOff size={16} />}
           </button>
         </div>
       ))}
@@ -492,7 +492,7 @@ function ImportSection() {
         disabled={importing}
         className="flex items-center gap-2 px-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50"
       >
-        {importing ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+        {importing ? <FaSpinner size={16} className="animate-spin" /> : <FaUpload size={16} />}
         导入 Obsidian 仓库
       </button>
       {result && (

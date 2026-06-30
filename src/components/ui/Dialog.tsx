@@ -1,5 +1,5 @@
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { X } from "lucide-react";
+import { FaXmark } from "react-icons/fa6";
 import { cn } from "@/lib/utils";
 
 interface DialogProps {
@@ -30,7 +30,7 @@ export function Dialog({ open, onOpenChange, title, children, className }: Dialo
             </DialogPrimitive.Title>
           )}
           <DialogPrimitive.Close className="absolute top-4 right-4 p-1 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 transition-colors">
-            <X size={16} />
+            <FaXmark size={16} />
           </DialogPrimitive.Close>
           {children}
         </DialogPrimitive.Content>

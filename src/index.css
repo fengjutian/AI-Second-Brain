@@ -63,12 +63,29 @@
   @apply bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 rounded-md px-1.5 py-0.5 text-[0.9em] font-mono;
 }
 
-/* Code block — full block */
+/* Code block — full block with language label + copy */
 .tiptap pre {
-  @apply bg-zinc-900 dark:bg-zinc-950 text-zinc-100 rounded-xl p-5 my-5 overflow-x-auto border border-zinc-200 dark:border-zinc-800;
+  @apply relative bg-zinc-900 dark:bg-zinc-950 text-zinc-100 rounded-xl p-5 my-5 overflow-x-auto border border-zinc-200 dark:border-zinc-800;
 }
 .tiptap pre code {
   @apply bg-transparent text-zinc-100 dark:text-zinc-100 p-0 text-sm leading-relaxed;
+}
+/* Language label */
+.tiptap pre[data-language]::before {
+  content: attr(data-language);
+  @apply absolute top-2 right-2 text-[10px] uppercase tracking-wider text-zinc-500 bg-zinc-800 rounded px-2 py-0.5;
+}
+/* Copy button appears on hover */
+.tiptap pre::after {
+  content: "复制";
+  @apply absolute top-2 right-2 text-[10px] text-zinc-500 bg-zinc-800 rounded px-2 py-0.5 opacity-0 transition-opacity cursor-pointer select-none;
+}
+.tiptap pre:hover::after {
+  @apply opacity-100;
+}
+.tiptap pre[data-language]::after {
+  right: auto;
+  left: 0.75rem;
 }
 
 /* Horizontal rule */

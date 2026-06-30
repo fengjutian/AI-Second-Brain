@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api";
 import { useNoteStore } from "@/stores/noteStore";
 import { useTabStore } from "@/stores/tabStore";
-import { Loader2 } from "lucide-react";
+import { FaSpinner } from "react-icons/fa6";
 
 interface HoverPreviewProps {
   target: string | null;
@@ -73,7 +73,7 @@ export function HoverPreview({ target, position }: HoverPreviewProps) {
       <div className="px-3 py-2 text-sm text-zinc-600 dark:text-zinc-400 max-h-48 overflow-y-auto">
         {loading && (
           <div className="flex items-center gap-2 py-2">
-            <Loader2 size={14} className="animate-spin" />
+            <FaSpinner size={14} className="animate-spin" />
             加载中...
           </div>
         )}

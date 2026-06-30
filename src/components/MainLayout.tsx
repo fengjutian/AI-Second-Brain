@@ -7,7 +7,7 @@ import { useSettingsStore } from "@/stores/settingsStore";
 import { api } from "@/lib/api";
 import { useState, useEffect, useRef } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
-import { ChevronDown, FolderOpen, Plus, Check, Trash2, GitGraph } from "lucide-react";
+import { FaChevronDown, FaFolderOpen, FaPlus, FaCheck, FaTrashCan, FaCodeBranch } from "react-icons/fa6";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 
@@ -41,7 +41,7 @@ export function MainLayout() {
           className="flex items-center gap-1 px-2 py-0.5 rounded text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
           title="知识图谱"
         >
-          <GitGraph size={14} />
+          <FaCodeBranch size={14} />
           图谱
         </button>
       </div>
@@ -135,7 +135,7 @@ function VaultSwitcher() {
         className="flex items-center gap-1 px-2 py-0.5 rounded text-xs text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
       >
         {switching ? "切换中..." : "切换"}
-        <ChevronDown size={12} className={cn("transition-transform", open_ && "rotate-180")} />
+        <FaChevronDown size={12} className={cn("transition-transform", open_ && "rotate-180")} />
       </button>
 
       {open_ && (
@@ -145,7 +145,7 @@ function VaultSwitcher() {
             onClick={handleOpenNew}
             className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
           >
-            <Plus size={14} className="text-accent" />
+            <FaPlus size={14} className="text-accent" />
             打开新知识库...
           </button>
 
@@ -164,10 +164,10 @@ function VaultSwitcher() {
                 onClick={() => handleSwitch(v.path, v.name)}
                 className="flex-1 flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 min-w-0"
               >
-                <FolderOpen size={14} className="text-zinc-400 shrink-0" />
+                <FaFolderOpen size={14} className="text-zinc-400 shrink-0" />
                 <span className="truncate">{v.name}</span>
                 {v.path === vaultPath && (
-                  <Check size={14} className="text-accent shrink-0 ml-auto" />
+                  <FaCheck size={14} className="text-accent shrink-0 ml-auto" />
                 )}
               </button>
               <button
@@ -175,7 +175,7 @@ function VaultSwitcher() {
                 className="p-1 mr-1 rounded opacity-0 group-hover:opacity-100 hover:bg-zinc-200 dark:hover:bg-zinc-700 shrink-0"
                 title="从列表中移除"
               >
-                <Trash2 size={12} className="text-zinc-400" />
+                <FaTrashCan size={12} className="text-zinc-400" />
               </button>
             </div>
           ))}
@@ -258,7 +258,7 @@ function VaultPrompt() {
                   disabled={loading}
                   className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50"
                 >
-                  <FolderOpen size={14} className="text-zinc-400" />
+                  <FaFolderOpen size={14} className="text-zinc-400" />
                   <span className="truncate">{v.name}</span>
                   <span className="text-xs text-zinc-400 truncate ml-auto">{v.path}</span>
                 </button>
