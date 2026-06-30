@@ -10,6 +10,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from core.indexer import scan_vault
 from core.watcher import start_watcher, stop_watcher
+from core.embeddings import EmbeddingEngine
+from core.rag import RAGEngine
 from data.database import connect, init_db
 from api.notes import router as notes_router, set_vault_path
 from api.search import router as search_router
@@ -42,6 +44,16 @@ manager = ConnectionManager()
 
 # ---- Vault State ----
 _vault_path: Optional[str] = None
+_embedding_engine: Optional[EmbeddingEngine] = None
+_rag_engine: Optional[RAGEngine] = None
+
+
+def get_embedding_engine() -> Optional[EmbeddingEngine]:
+    return _embedding_engine
+
+
+def get_rag_engine() -> Optional[RAGEngine]:
+    return _rag_engine
 
 
 def on_file_change(note_id: str, event_type: str):
@@ -142,6 +154,17 @@ async def open_vault(data: dict):
     result = scan_vault(conn, path)
     conn.close()
 
+    # Initialize AI engines
+    global _embedding_engine, _rag_engine
+    try:
+        _embedding_engine = EmbeddingEngine(path, provider="local")
+        _rag_engine = RAGEngine(_embedding_engine, llm_provider="local")
+        print(f"[startup] AI engines ready — embeddings: {_embedding_engine.provider}, LLM: {_rag_engine.llm_provider}")
+    except Exception as e:
+        print(f"[startup] AI engines not available: {e}")
+        _embedding_engine = None
+        _rag_engine = None
+
     # Start watcher
     start_watcher(path, on_file_change)
 
@@ -172,4 +195,42 @@ async def websocket_endpoint(ws: WebSocket):
 # ---- Health ----
 @app.get("/api/v1/health")
 async def health():
-    return {"status": "ok", "version": "0.1.0", "vault": _vault_path}
+    return {
+        "status": "ok",
+        "version": "0.2.0",
+        "vault": _vault_path,
+        "ai": {
+            "embeddings": _embedding_engine is not None,
+            "rag": _rag_engine is not None,
+        },
+    }
+
+
+# ---- AI Endpoints ----
+@app.post("/api/v1/ai/suggest-tags")
+async def suggest_tags(data: dict):
+    """Suggest tags for note content."""
+    if not _rag_engine:
+        return {"tags": []}
+    tags = await _rag_engine.suggest_tags(data.get("content", ""))
+    return {"tags": tags}
+
+
+@app.post("/api/v1/ai/summarize")
+async def summarize_note(data: dict):
+    """Summarize note content."""
+    if not _rag_engine:
+        return {"summary": "AI 引擎未启用"}
+    summary = await _rag_engine.summarize(data.get("content", ""))
+    return {"summary": summary}
+
+
+@app.post("/api/v1/ai/suggest-links")
+async def suggest_links(data: dict):
+    """Suggest related notes."""
+    if not _rag_engine:
+        return {"related": []}
+    related = await _rag_engine.suggest_links(
+        data.get("note_id", ""), data.get("content", "")
+    )
+    return {"related": related}
