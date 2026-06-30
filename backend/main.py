@@ -46,18 +46,19 @@ class ConnectionManager:
             self.active.remove(ws)
 
 manager = ConnectionManager()
+_main_loop: asyncio.AbstractEventLoop | None = None
 
 
 def on_file_change(note_id: str, event_type: str):
     """Callback from file watcher — broadcast via WebSocket."""
-    loop = asyncio.get_event_loop()
-    if loop.is_running():
+    global _main_loop
+    if _main_loop and _main_loop.is_running():
         asyncio.run_coroutine_threadsafe(
             manager.broadcast({
                 "type": f"note_{event_type}",
                 "data": {"id": note_id},
             }),
-            loop,
+            _main_loop,
         )
 
 
@@ -69,6 +70,8 @@ async def lifespan(app: FastAPI):
 
     if vault_path and os.path.isdir(vault_path):
         shared.set_vault_path(vault_path)
+        global _main_loop
+        _main_loop = asyncio.get_event_loop()
         print(f"[startup] Vault: {vault_path}")
         conn = connect(vault_path)
         init_db(conn)
@@ -183,6 +186,10 @@ async def open_vault(data: dict):
         shared.set_rag_engine(None)
 
     shared.set_vault_path(path)
+
+    # Capture event loop for file watcher callbacks
+    global _main_loop
+    _main_loop = asyncio.get_event_loop()
 
     # Persist session
     app_session.set_current(path)
