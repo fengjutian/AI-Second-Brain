@@ -9,6 +9,7 @@ import { StatusBar } from "@/components/StatusBar";
 import { WhiteboardPanel } from "@/components/sidebar/WhiteboardPanel";
 import { BrowserPanel } from "@/components/sidebar/BrowserPanel";
 import { ChatPanel } from "@/components/sidebar/ChatPanel";
+import { TerminalPanel } from "@/components/sidebar/TerminalPanel";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { api } from "@/lib/api";
 import { useState, useEffect, useRef, lazy, Suspense } from "react";
@@ -55,7 +56,7 @@ export function MainLayout() {
       {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
         <ActivityBar activePane={activePane} onPaneChange={setActivePane} />
-        {activePane !== "graph" && activePane !== "whiteboard" && activePane !== "browser" && activePane !== "chat" && (
+        {activePane !== "graph" && activePane !== "whiteboard" && activePane !== "browser" && activePane !== "chat" && activePane !== "terminal" && (
           <Sidebar activePane={activePane} />
         )}
         <div className={activePane === "graph" ? "flex-1 min-w-0 bg-white dark:bg-zinc-950 animate-slide-in-right" : "hidden"}>
@@ -72,7 +73,10 @@ export function MainLayout() {
         <div className={activePane === "chat" ? "flex-1 flex flex-col min-w-0" : "hidden"}>
           <ChatPanel />
         </div>
-        {activePane !== "graph" && activePane !== "whiteboard" && activePane !== "browser" && activePane !== "chat" ? (
+        <div className={activePane === "terminal" ? "flex-1 flex flex-col min-w-0" : "hidden"}>
+          <TerminalPanel />
+        </div>
+        {activePane !== "graph" && activePane !== "whiteboard" && activePane !== "browser" && activePane !== "chat" && activePane !== "terminal" ? (
           <>
             <div className="flex-1 flex flex-col min-w-0 animate-fade-in">
               <TabManager />

@@ -1,8 +1,8 @@
-import { FaFolder, FaMagnifyingGlass, FaCodeBranch, FaChalkboard, FaGear, FaCalendar, FaGlobe, FaRobot } from "react-icons/fa6";
+import { FaFolder, FaMagnifyingGlass, FaCodeBranch, FaChalkboard, FaGear, FaCalendar, FaGlobe, FaRobot, FaTerminal } from "react-icons/fa6";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 
-export type SidebarPane = "files" | "search" | "graph" | "whiteboard" | "calendar" | "browser" | "chat";
+export type SidebarPane = "files" | "search" | "graph" | "whiteboard" | "calendar" | "browser" | "chat" | "terminal";
 
 interface ActivityBarProps {
   activePane: SidebarPane;
@@ -17,6 +17,7 @@ const topActions: { id: SidebarPane; icon: typeof FaFolder; label: string }[] = 
   { id: "whiteboard", icon: FaChalkboard, label: "白板" },
   { id: "browser", icon: FaGlobe, label: "浏览器" },
   { id: "chat", icon: FaRobot, label: "AI 助手" },
+  { id: "terminal", icon: FaTerminal, label: "终端" },
 ];
 
 export function ActivityBar({ activePane, onPaneChange }: ActivityBarProps) {
