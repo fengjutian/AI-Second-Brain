@@ -1,5 +1,5 @@
 {
-  "name": "ai-second-brain",
+  "name": "rainstone",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -25,6 +25,7 @@
     "@tiptap/react": "^2.11.0",
     "@tiptap/starter-kit": "^2.11.0",
     "@tiptap/suggestion": "^2.11.0",
+    "@tldraw/tldraw": "^5.1.1",
     "clsx": "^2.1.0",
     "cytoscape": "^3.30.0",
     "react": "^19.0.0",

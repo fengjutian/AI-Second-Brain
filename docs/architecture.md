@@ -95,7 +95,7 @@ data/
 ### 1.4 项目目录结构
 
 ```
-ai-second-brain/
+rainstone/
 ├─ src-tauri/               # Tauri Rust 壳
 │   ├─ src/main.rs
 │   ├─ tauri.conf.json
@@ -515,7 +515,7 @@ interface SettingsStore {
 ```bash
 # 1. 克隆项目
 git clone <repo-url>
-cd ai-second-brain
+cd rainstone
 
 # 2. 安装前端依赖
 pnpm install
@@ -560,8 +560,8 @@ pnpm tauri dev
 ```toml
 # src-tauri/tauri.conf.json (关键字段)
 {
-  "productName": "AI Second Brain",
-  "identifier": "com.ai-second-brain.app",
+  "productName": "Rainstone",
+  "identifier": "com.rainstone.app",
   "build": {
     "devUrl": "http://localhost:1420",
     "frontendDist": "../dist"
@@ -578,7 +578,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from api import notes, search, chat, graph, tags, vault, ws
 
-app = FastAPI(title="AI Second Brain", version="0.1.0")
+app = FastAPI(title="Rainstone", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,

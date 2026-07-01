@@ -231,7 +231,7 @@ function GeneralSection() {
       {/* About */}
       <section>
         <h3 className="text-sm font-medium mb-3">关于</h3>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">AI Second Brain v0.1.0</p>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">Rainstone v0.1.0</p>
         <p className="text-sm text-zinc-500 dark:text-zinc-400">Tauri + React + FastAPI</p>
       </section>
     </div>

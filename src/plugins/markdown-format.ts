@@ -7,7 +7,7 @@ export const MarkdownFormatPlugin: Plugin = {
     name: "Markdown 格式化",
     version: "1.0.0",
     description: "提供 Markdown 格式化快捷键（加粗/斜体/列表等）",
-    author: "AI Second Brain",
+    author: "Rainstone",
     minAppVersion: "0.3.0",
   },
 

@@ -13,7 +13,7 @@ export function TabManager() {
     return (
       <div className="flex-1 flex items-center justify-center text-zinc-400 dark:text-zinc-500">
         <div className="text-center space-y-2">
-          <p className="text-lg">AI Second Brain</p>
+          <p className="text-lg">Rainstone</p>
           <p className="text-sm">Ctrl+N 新建笔记 ｜ Ctrl+P 命令面板</p>
         </div>
       </div>

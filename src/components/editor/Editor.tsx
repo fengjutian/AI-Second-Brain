@@ -13,6 +13,7 @@ import { useSlashMenu, SlashMenu } from "@/components/editor/SlashMenu";
 import { api } from "@/lib/api";
 import {
   FaBold, FaItalic, FaStrikethrough, FaCode, FaHeading, FaListUl, FaListOl, FaQuoteRight, FaParagraph, FaGripVertical, FaUnderline, FaLink,
+  FaInfoCircle, FaChevronDown,
 } from "react-icons/fa6";
 import { cn } from "@/lib/utils";
 
@@ -38,6 +39,7 @@ export function Editor({ tabId, noteId }: EditorProps) {
   const tabIdRef = useRef(tabId);
   noteIdRef.current = noteId;
   tabIdRef.current = tabId;
+  const [showMeta, setShowMeta] = useState(false);
   const [hoverTarget, setHoverTarget] = useState<string | null>(null);
   const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null);
   const hoverCallbacks = useRef<{ onHover: Function; onLeave: Function }>({
@@ -126,13 +128,42 @@ export function Editor({ tabId, noteId }: EditorProps) {
   return (
     <div className="h-full overflow-y-auto relative">
       <div className="max-w-3xl mx-auto py-8 px-4">
-        <input
-          type="text"
-          value={note?.title || ""}
-          placeholder="笔记标题"
-          onChange={handleTitleChange}
-          className="w-full text-3xl font-bold bg-transparent outline-none mb-4 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-300 dark:placeholder:text-zinc-600"
-        />
+        <div className="flex items-start gap-2 mb-4">
+          <input
+            type="text"
+            value={note?.title || ""}
+            placeholder="笔记标题"
+            onChange={handleTitleChange}
+            className="flex-1 text-3xl font-bold bg-transparent outline-none text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-300 dark:placeholder:text-zinc-600"
+          />
+          <button
+            onClick={() => setShowMeta(!showMeta)}
+            className={cn(
+              "mt-2 p-1.5 rounded-md transition-colors shrink-0",
+              showMeta
+                ? "bg-accent/15 text-accent"
+                : "text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            )}
+            title="元数据"
+          >
+            <FaInfoCircle size={16} />
+          </button>
+        </div>
+
+        {showMeta && note && (
+          <div className="mb-4 p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 text-xs animate-fade-in">
+            <MetaRow label="ID" value={note.id.slice(0, 8) + "…"} />
+            <MetaRow label="路径" value={note.path} />
+            <MetaRow label="创建" value={fmtDate(note.created)} />
+            <MetaRow label="更新" value={fmtDate(note.updated)} />
+            {note.tags && note.tags.length > 0 && (
+              <MetaRow label="标签" value={note.tags.join(", ")} />
+            )}
+            {note.aliases && note.aliases.length > 0 && (
+              <MetaRow label="别名" value={note.aliases.join(", ")} />
+            )}
+          </div>
+        )}
 
         <div className="relative">
           {/* Notion-style block handle */}
@@ -178,6 +209,25 @@ export function Editor({ tabId, noteId }: EditorProps) {
         </div>
       </div>
       <SlashOverlay editor={editor} />
+    </div>
+  );
+}
+
+// ── Metadata helpers ──
+function fmtDate(iso: string) {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+  } catch {
+    return iso;
+  }
+}
+
+function MetaRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex gap-2 py-0.5 text-zinc-500 dark:text-zinc-400">
+      <span className="shrink-0 w-10 text-zinc-400 dark:text-zinc-500">{label}</span>
+      <span className="text-zinc-700 dark:text-zinc-300 truncate">{value}</span>
     </div>
   );
 }

@@ -7,7 +7,7 @@ export const DailyReviewPlugin: Plugin = {
     name: "每日回顾",
     version: "1.0.0",
     description: "随机推荐一篇旧笔记供回顾",
-    author: "AI Second Brain",
+    author: "Rainstone",
     minAppVersion: "0.3.0",
   },
 

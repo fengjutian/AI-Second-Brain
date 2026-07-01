@@ -13,7 +13,7 @@ export function StatusBar() {
       <span>{note ? `${note.content.length} 字符` : ""}</span>
       {activeTab?.isDirty && <span className="text-accent">未保存</span>}
       <div className="flex-1" />
-      <span>AI Second Brain v0.1</span>
+      <span>Rainstone v0.1</span>
     </div>
   );
 }

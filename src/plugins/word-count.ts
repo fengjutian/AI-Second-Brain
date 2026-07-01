@@ -7,7 +7,7 @@ export const WordCountPlugin: Plugin = {
     name: "字数统计",
     version: "1.0.0",
     description: "在状态栏显示当前笔记的字数和字符数",
-    author: "AI Second Brain",
+    author: "Rainstone",
     minAppVersion: "0.3.0",
   },
 

@@ -1,4 +1,4 @@
-"""AI Second Brain — FastAPI Application Entry Point."""
+"""Rainstone — FastAPI Application Entry Point."""
 import os
 import json
 import asyncio
@@ -86,11 +86,11 @@ async def lifespan(app: FastAPI):
 
     stop_watcher()
     plugin_manager.deactivate_all()
-    print("[shutdown] AI Second Brain backend stopped")
+    print("[shutdown] Rainstone backend stopped")
 
 
 app = FastAPI(
-    title="AI Second Brain",
+    title="Rainstone",
     version="0.2.0",
     lifespan=lifespan,
 )

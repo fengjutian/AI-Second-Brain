@@ -155,10 +155,14 @@ export const FileTree = forwardRef<{ refresh: () => void }>(function FileTree(_p
       const title = relPath.replace(/\.md$/, "").split("/").pop() || relPath;
 
       // Strip YAML frontmatter (between first pair of ---)
-      if (raw.startsWith("---\n")) {
-        const end = raw.indexOf("\n---\n", 4);
+      // Normalize line endings first — Tauri may return \r\n on Windows
+      const normalized = raw.replace(/\r\n/g, "\n");
+      if (normalized.startsWith("---\n")) {
+        const end = normalized.indexOf("\n---\n", 4);
         if (end !== -1) {
-          raw = raw.slice(end + 5).trimStart();
+          raw = normalized.slice(end + 5).trimStart();
+        } else {
+          raw = normalized;
         }
       }
 
