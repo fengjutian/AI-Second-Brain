@@ -42,7 +42,7 @@ export function MainLayout() {
       {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
         <ActivityBar activePane={activePane} onPaneChange={setActivePane} />
-        <div className={activePane === "graph" ? "hidden" : ""}>
+        <div className={activePane === "graph" ? "hidden" : "contents"}>
           <Sidebar activePane={activePane} />
         </div>
         {activePane === "graph" ? (

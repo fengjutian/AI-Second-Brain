@@ -16,10 +16,10 @@ export function Sidebar({ activePane }: SidebarProps) {
   return (
     <div className="w-60 bg-zinc-50 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-700 flex flex-col shrink-0">
       <div className="flex-1 overflow-y-auto p-2">
-        <div className="transition-opacity duration-150" style={{ opacity: activePane === "files" ? 1 : 0, pointerEvents: activePane === "files" ? "auto" : "none", position: activePane === "files" ? "static" : "absolute" }}>
+        <div className={activePane === "files" ? "animate-fade-in" : "hidden"}>
           <FileTreePane />
         </div>
-        <div className="transition-opacity duration-150" style={{ opacity: activePane === "search" ? 1 : 0, pointerEvents: activePane === "search" ? "auto" : "none", position: activePane === "search" ? "static" : "absolute" }}>
+        <div className={activePane === "search" ? "animate-fade-in" : "hidden"}>
           <SearchPane />
         </div>
       </div>

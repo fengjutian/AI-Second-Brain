@@ -51,24 +51,24 @@ function buildTree(notes: { path: string; title: string; id: string }[]): TreeNo
 }
 
 /** Recursively scan vault directory for .md files using Tauri FS plugin */
-async function scanDirectory(dirPath: string): Promise<{ id: string; path: string; title: string }[]> {
+async function scanDirectory(dirPath: string, rootPath?: string): Promise<{ id: string; path: string; title: string }[]> {
   const { readDir } = await import("@tauri-apps/plugin-fs");
   const entries = await readDir(dirPath);
   const results: { id: string; path: string; title: string }[] = [];
+  const base = rootPath || dirPath;
 
   for (const entry of entries) {
-    // Skip hidden files/dirs and .trash
     if (entry.name.startsWith(".") || entry.name === ".trash") continue;
 
     const fullPath = `${dirPath}/${entry.name}`;
+    const relPath = fullPath.slice(base.length + 1); // relative from vault root
 
     if (entry.isDirectory) {
-      const children = await scanDirectory(fullPath);
+      const children = await scanDirectory(fullPath, base);
       results.push(...children);
     } else if (entry.name.endsWith(".md")) {
-      // Derive title from filename (strip .md), use path as id for direct-fs mode
       const title = entry.name.replace(/\.md$/, "");
-      results.push({ id: fullPath, path: entry.name, title });
+      results.push({ id: fullPath, path: relPath, title });
     }
   }
   return results;
@@ -99,13 +99,16 @@ export function FileTree() {
     }
   }, [vaultPath]);
 
-  // Real-time updates via WebSocket from backend file watcher
+  // Real-time updates via WebSocket from backend file watcher (browser only)
   const refreshRef = useRef<() => void>(() => {});
   refreshRef.current = () => {
-    api.notes.list().then(setNotes).catch(() => {});
+    if (!isTauri()) {
+      api.notes.list().then(setNotes).catch(() => {});
+    }
   };
 
   useEffect(() => {
+    if (isTauri()) return; // No WebSocket in Tauri mode
     let ws: WebSocket | null = null;
     let reconnectTimer: ReturnType<typeof setTimeout>;
 
@@ -140,10 +143,20 @@ export function FileTree() {
 
   const tree = useMemo(() => buildTree(notes), [notes]);
 
-  const handleOpen = useCallback(async (noteId: string, path: string) => {
-    const note = await api.notes.get(noteId);
-    loadNote(noteId, note);
-    openTab({ noteId, title: note.title, path: note.path });
+  const handleOpen = useCallback(async (noteId: string, relPath: string) => {
+    if (isTauri()) {
+      // Tauri: read file directly from filesystem
+      const { readTextFile } = await import("@tauri-apps/plugin-fs");
+      const content = await readTextFile(noteId);
+      const title = relPath.replace(/\.md$/, "").split("/").pop() || relPath;
+      const note = { id: noteId, path: relPath, title, content };
+      loadNote(noteId, note);
+      openTab({ noteId, title, path: relPath });
+    } else {
+      const note = await api.notes.get(noteId);
+      loadNote(noteId, note);
+      openTab({ noteId, title: note.title, path: note.path });
+    }
   }, [loadNote, openTab]);
 
   const handleCreateNote = async (name: string) => {
@@ -156,11 +169,28 @@ export function FileTree() {
 
   const handleDeleteNote = useCallback(async (noteId: string) => {
     if (!confirm("确定删除这篇笔记？\n\n笔记会被移到 .trash 目录，可以手动恢复。")) return;
-    try {
-      await api.notes.delete(noteId);
-      setNotes((prev) => prev.filter((n) => n.id !== noteId));
-    } catch (e) {
-      console.error("Failed to delete note:", e);
+    if (isTauri()) {
+      try {
+        // Try API first (it handles .trash properly)
+        await api.notes.delete(noteId);
+        setNotes((prev) => prev.filter((n) => n.id !== noteId));
+      } catch {
+        // Fallback: direct delete via Tauri FS
+        try {
+          const { remove } = await import("@tauri-apps/plugin-fs");
+          await remove(noteId);
+          setNotes((prev) => prev.filter((n) => n.id !== noteId));
+        } catch (e) {
+          console.error("Failed to delete note:", e);
+        }
+      }
+    } else {
+      try {
+        await api.notes.delete(noteId);
+        setNotes((prev) => prev.filter((n) => n.id !== noteId));
+      } catch (e) {
+        console.error("Failed to delete note:", e);
+      }
     }
   }, []);
 
