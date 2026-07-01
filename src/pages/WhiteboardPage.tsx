@@ -1,21 +1,12 @@
-import { useState, lazy, Suspense } from "react";
+import { lazy, Suspense } from "react";
 import { FaArrowLeft, FaSpinner } from "react-icons/fa6";
 import { useNavigate } from "react-router-dom";
 
-type BoardMode = "tldraw" | "excalidraw";
-
-// Lazy-load tldraw — it's ~1MB, don't block initial load
-const TldrawBoard = lazy(() =>
-  import("./TldrawBoard").then((m) => ({ default: m.TldrawBoard }))
-);
-
-// Placeholder for Excalidraw (install @excalidraw/excalidraw first)
 const ExcalidrawBoard = lazy(() =>
   import("./ExcalidrawBoard").then((m) => ({ default: m.ExcalidrawBoard }))
 );
 
 export function WhiteboardPage() {
-  const [mode, setMode] = useState<BoardMode>("tldraw");
   const navigate = useNavigate();
 
   return (
@@ -29,23 +20,6 @@ export function WhiteboardPage() {
           <FaArrowLeft size={16} className="text-zinc-400" />
         </button>
         <span className="text-sm font-medium">白板</span>
-
-        {/* Mode switcher */}
-        <div className="flex gap-1 ml-auto">
-          {(["tldraw", "excalidraw"] as BoardMode[]).map((m) => (
-            <button
-              key={m}
-              onClick={() => setMode(m)}
-              className={`px-2.5 py-1 text-xs rounded-md transition-colors ${
-                mode === m
-                  ? "bg-accent text-white"
-                  : "text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-              }`}
-            >
-              {m === "tldraw" ? "tldraw" : "Excalidraw"}
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* Board */}
@@ -58,7 +32,7 @@ export function WhiteboardPage() {
             </div>
           }
         >
-          {mode === "tldraw" ? <TldrawBoard /> : <ExcalidrawBoard />}
+          <ExcalidrawBoard />
         </Suspense>
       </div>
     </div>
