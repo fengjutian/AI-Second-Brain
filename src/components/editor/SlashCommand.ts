@@ -107,15 +107,12 @@ export const SlashCommand = Extension.create({
           );
         },
         render: () => {
-          let onExitCallback: (() => void) | null = null;
-
           const emit = (type: string, detail: Record<string, unknown> = {}) => {
             window.dispatchEvent(new CustomEvent(`slash:${type}`, { detail }));
           };
 
           return {
             onStart: (props: any) => {
-              onExitCallback = props.onExit || null;
               emit("show", {
                 clientRect: props.clientRect,
                 items: props.items,
@@ -131,7 +128,7 @@ export const SlashCommand = Extension.create({
             },
             onKeyDown: (props: any) => {
               if (props.event.key === "Escape") {
-                onExitCallback?.();
+                // Let TipTap handle Escape naturally
                 return true;
               }
               emit("keydown", { event: props.event });
@@ -139,7 +136,6 @@ export const SlashCommand = Extension.create({
             },
             onExit: () => {
               emit("hide");
-              onExitCallback = null;
             },
           };
         },
