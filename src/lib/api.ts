@@ -31,6 +31,9 @@ export const api = {
     outgoingLinks: (id: string) => request<any[]>(`/notes/${id}/links/outgoing`),
     backlinks: (id: string) => request<any[]>(`/notes/${id}/links/backlinks`),
   },
+  tags: {
+    list: () => request<string[]>("/tags"),
+  },
   search: {
     keyword: (q: string) => request<any[]>(`/search?q=${encodeURIComponent(q)}`),
     semantic: (q: string) => request<any[]>(`/search/semantic?q=${encodeURIComponent(q)}`),
