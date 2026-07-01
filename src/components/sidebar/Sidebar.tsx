@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { FaPlus, FaCalendar, FaTags, FaArrowLeft } from "react-icons/fa6";
 import { FileTree } from "@/components/sidebar/FileTree";
 import { SearchPanel } from "@/components/search/SearchPanel";
@@ -32,6 +32,7 @@ type View = "tree" | "tags";
 function FileTreePane() {
   const [view, setView] = useState<View>("tree");
   const [newNoteOpen, setNewNoteOpen] = useState(false);
+  const fileTreeRef = useRef<{ refresh: () => void }>(null);
   const loadNote = useNoteStore((s) => s.loadNote);
   const openTab = useTabStore((s) => s.openTab);
 
@@ -40,6 +41,7 @@ function FileTreePane() {
       const note = await api.notes.create({ path: `${name}.md` });
       loadNote(note.id, note);
       openTab({ noteId: note.id, title: note.title, path: note.path });
+      fileTreeRef.current?.refresh();
     } catch (e) {
       console.error("Failed to create note:", e);
     }
@@ -90,7 +92,7 @@ function FileTreePane() {
         </div>
       ) : (
         <div className="animate-fade-in">
-          <FileTree />
+          <FileTree ref={fileTreeRef} />
         </div>
       )}
 

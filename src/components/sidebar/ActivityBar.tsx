@@ -1,4 +1,4 @@
-import { FaFolder, FaMagnifyingGlass, FaCodeBranch, FaGear } from "react-icons/fa6";
+import { FaFolder, FaMagnifyingGlass, FaCodeBranch, FaChalkboard, FaGear } from "react-icons/fa6";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 
@@ -44,6 +44,18 @@ export function ActivityBar({ activePane, onPaneChange }: ActivityBarProps) {
       ))}
 
       <div className="flex-1" />
+
+      {/* Whiteboard */}
+      <button
+        onClick={() => navigate("/whiteboard")}
+        className="w-10 h-10 flex items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors relative group"
+        title="白板"
+      >
+        <FaChalkboard size={20} />
+        <span className="absolute left-full ml-2 px-2 py-1 text-xs bg-zinc-800 dark:bg-zinc-100 text-white dark:text-zinc-800 rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">
+          白板
+        </span>
+      </button>
 
       {/* Settings */}
       <button

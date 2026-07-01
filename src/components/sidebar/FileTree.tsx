@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, memo, useCallback, useRef } from "react";
+import { forwardRef, useImperativeHandle, useEffect, useState, useMemo, memo, useCallback, useRef } from "react";
 import { FaFile, FaFolder, FaFolderOpen, FaChevronRight, FaChevronDown, FaTrashCan } from "react-icons/fa6";
 import { api } from "@/lib/api";
 import { isTauri } from "@/lib/env";
@@ -74,7 +74,7 @@ async function scanDirectory(dirPath: string, rootPath?: string): Promise<{ id: 
   return results;
 }
 
-export function FileTree() {
+export const FileTree = forwardRef<{ refresh: () => void }>(function FileTree(_props, ref) {
   const [notes, setNotes] = useState<{ id: string; path: string; title: string }[]>([]);
   const [newNoteOpen, setNewNoteOpen] = useState(false);
   const openTab = useTabStore((s) => s.openTab);
@@ -102,10 +102,14 @@ export function FileTree() {
   // Real-time updates via WebSocket from backend file watcher (browser only)
   const refreshRef = useRef<() => void>(() => {});
   refreshRef.current = () => {
-    if (!isTauri()) {
+    if (isTauri()) {
+      scanDirectory(vaultPath).then(setNotes).catch(() => {});
+    } else {
       api.notes.list().then(setNotes).catch(() => {});
     }
   };
+
+  useImperativeHandle(ref, () => ({ refresh: refreshRef.current }), []);
 
   useEffect(() => {
     if (isTauri()) return; // No WebSocket in Tauri mode
@@ -147,9 +151,18 @@ export function FileTree() {
     if (isTauri()) {
       // Tauri: read file directly from filesystem
       const { readTextFile } = await import("@tauri-apps/plugin-fs");
-      const content = await readTextFile(noteId);
+      let raw = await readTextFile(noteId);
       const title = relPath.replace(/\.md$/, "").split("/").pop() || relPath;
-      const note = { id: noteId, path: relPath, title, content };
+
+      // Strip YAML frontmatter (between first pair of ---)
+      if (raw.startsWith("---\n")) {
+        const end = raw.indexOf("\n---\n", 4);
+        if (end !== -1) {
+          raw = raw.slice(end + 5).trimStart();
+        }
+      }
+
+      const note = { id: noteId, path: relPath, title, content: raw };
       loadNote(noteId, note);
       openTab({ noteId, title, path: relPath });
     } else {
@@ -228,7 +241,7 @@ export function FileTree() {
       />
     </div>
   );
-}
+});
 
 const TreeNodeItem = memo(function TreeNodeItem({
   node,

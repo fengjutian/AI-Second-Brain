@@ -2,6 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import { MainLayout } from "@/components/MainLayout";
 import { GraphView } from "@/pages/GraphView";
 import { SettingsPage } from "@/pages/SettingsPage";
+import { WhiteboardPage } from "@/pages/WhiteboardPage";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { usePluginStore } from "@/stores/pluginStore";
 import { useTabStore } from "@/stores/tabStore";
@@ -69,6 +70,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<MainLayout />} />
       <Route path="/graph" element={<GraphView />} />
+      <Route path="/whiteboard" element={<WhiteboardPage />} />
       <Route path="/settings" element={<SettingsPage />} />
     </Routes>
   );
