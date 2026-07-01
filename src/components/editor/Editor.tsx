@@ -86,6 +86,21 @@ export function Editor({ tabId, noteId }: EditorProps) {
       attributes: {
         class: "tiptap outline-none min-h-full",
       },
+      handleDOMEvents: {
+        keydown: (view, event) => {
+          if ((event.ctrlKey || event.metaKey) && event.key === "s") {
+            event.preventDefault();
+            if (saveTimerRef.current) {
+              clearTimeout(saveTimerRef.current);
+              saveTimerRef.current = undefined;
+            }
+            pendingSaveRef.current?.();
+            pendingSaveRef.current = null;
+            return true;
+          }
+          return false;
+        },
+      },
     },
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
