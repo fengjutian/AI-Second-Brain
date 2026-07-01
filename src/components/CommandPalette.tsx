@@ -39,12 +39,41 @@ export function CommandPalette({ onClose }: CommandPaletteProps) {
       icon: FaCalendar,
       action: async () => {
         try {
-          const { api } = await import("@/lib/api");
-          const note = await api.daily.today();
-          if (note?.id) {
-            const { useNoteStore } = await import("@/stores/noteStore");
-            useNoteStore.getState().loadNote(note.id, note);
-            openTab({ noteId: note.id, title: note.title, path: note.path });
+          const { isTauri: checkTauri } = await import("@/lib/env");
+          if (checkTauri()) {
+            const { useSettingsStore } = await import("@/stores/settingsStore");
+            const vaultPath = useSettingsStore.getState().vaultPath;
+            const today = new Date().toISOString().slice(0, 10);
+            const relPath = `daily/${today}.md`;
+            const filePath = `${vaultPath}/${relPath}`;
+            const { exists, readTextFile, writeTextFile, mkdir } = await import("@tauri-apps/plugin-fs");
+            if (await exists(filePath)) {
+              const raw = await readTextFile(filePath);
+              const content = raw.startsWith("---\n")
+                ? raw.slice(raw.indexOf("\n---\n", 4) + 5).trimStart()
+                : raw;
+              const { useNoteStore } = await import("@/stores/noteStore");
+              useNoteStore.getState().loadNote(filePath, { id: filePath, path: relPath, title: today, content });
+              openTab({ noteId: filePath, title: today, path: relPath });
+            } else {
+              const dailyDir = `${vaultPath}/daily`;
+              if (!(await exists(dailyDir))) await mkdir(dailyDir);
+              const noteId = crypto.randomUUID();
+              const now = new Date().toISOString();
+              const frontmatter = `---\nid: ${noteId}\ntitle: ${today}\ncreated: ${now}\nupdated: ${now}\ntags: ["daily"]\n---\n\n# ${today}\n\n`;
+              await writeTextFile(filePath, frontmatter);
+              const { useNoteStore } = await import("@/stores/noteStore");
+              useNoteStore.getState().loadNote(filePath, { id: filePath, path: relPath, title: today, content: `# ${today}\n\n` });
+              openTab({ noteId: filePath, title: today, path: relPath });
+            }
+          } else {
+            const { api } = await import("@/lib/api");
+            const note = await api.daily.today();
+            if (note?.id) {
+              const { useNoteStore } = await import("@/stores/noteStore");
+              useNoteStore.getState().loadNote(note.id, note);
+              openTab({ noteId: note.id, title: note.title, path: note.path });
+            }
           }
         } catch {}
         onClose();

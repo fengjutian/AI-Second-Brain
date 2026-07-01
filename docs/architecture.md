@@ -699,3 +699,79 @@ export const api = {
 ---
 
 > 下一步：按 MVP 版本规划开始编码实现。
+
+---
+
+## 6. Local-First Architecture
+
+### 6.1 Environment-Aware Data Paths
+
+```
+                    isTauri() === true
+                    ┌─────────────────┐
+                    │ @tauri-apps/     │
+  User Action ──────┤ plugin-fs        ├──→ Local .md files (read/write)
+                    │ readDir()        │
+                    │ readTextFile()   │
+                    │ writeTextFile()  │
+                    │ remove()         │
+                    └────────┬────────┘
+                             │ (async, best-effort)
+                             ▼
+                    ┌─────────────────┐
+                    │ FastAPI Backend  │
+                    │ (if running)    ├──→ SQLite FTS5
+                    │                 ├──→ ChromaDB
+                    │                 ├──→ LlamaIndex RAG
+                    └─────────────────┘
+
+                    isTauri() === false (Browser)
+                    ┌─────────────────┐
+  User Action ──────┤ api.ts (HTTP)   ├──→ FastAPI Backend (required)
+                    └─────────────────┘
+```
+
+### 6.2 Tauri FS Plugin Capabilities
+
+```json
+// src-tauri/capabilities/default.json
+{
+  "permissions": [
+    "fs:allow-read-dir",      // { "path": "**" } — scan vault directory
+    "fs:allow-read-text-file", // read .md content
+    "fs:allow-exists",         // check file existence
+    "fs:allow-remove",         // delete files
+    "fs:allow-rename"          // move/rename
+  ]
+}
+```
+
+### 6.3 Degradation Implementation Pattern
+
+```ts
+// src/lib/env.ts — environment detection
+export const isTauri = (): boolean =>
+  !!(window as any).__TAURI_INTERNALS__;
+
+// Usage pattern in components:
+if (isTauri()) {
+  // Local-first: use Tauri FS APIs directly
+  const { readTextFile, writeTextFile } = await import("@tauri-apps/plugin-fs");
+  // ... operate on files directly
+} else {
+  // Browser mode: use HTTP API
+  await api.notes.get(id);
+}
+```
+
+### 6.4 Current Coverage
+
+| Component | Local-First? | Method |
+|-----------|-------------|--------|
+| `FileTree.tsx` | ✅ Partial | list: readDir, open: readTextFile, delete: remove (fallback) |
+| `FileTree.tsx` (create) | ❌ Missing | Needs writeTextFile + frontmatter generation |
+| `Editor.tsx` (save) | ❌ Missing | Needs writeTextFile for direct .md overwrite |
+| `CommandPalette.tsx` (daily) | ❌ Missing | Needs date-based path construction + exists check |
+| `RightSidebar.tsx` (links) | ❌ Missing | Needs frontend [[link]] parser |
+| `SearchPanel.tsx` | ❌ Missing | Needs frontend regex search or FTS5 via Tauri command |
+| `GraphPanel.tsx` | ❌ Missing | Acceptable: show "backend required" message |

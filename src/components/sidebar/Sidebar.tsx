@@ -5,7 +5,9 @@ import { SearchPanel } from "@/components/search/SearchPanel";
 import type { SidebarPane } from "@/components/sidebar/ActivityBar";
 import { useNoteStore } from "@/stores/noteStore";
 import { useTabStore } from "@/stores/tabStore";
+import { useSettingsStore } from "@/stores/settingsStore";
 import { api } from "@/lib/api";
+import { isTauri } from "@/lib/env";
 import { InputDialog } from "@/components/ui/InputDialog";
 
 interface SidebarProps {
@@ -38,10 +40,24 @@ function FileTreePane() {
 
   const handleCreateNote = async (name: string) => {
     try {
-      const note = await api.notes.create({ path: `${name}.md` });
-      loadNote(note.id, note);
-      openTab({ noteId: note.id, title: note.title, path: note.path });
-      fileTreeRef.current?.refresh();
+      if (isTauri()) {
+        const { writeTextFile } = await import("@tauri-apps/plugin-fs");
+        const vaultPath = useSettingsStore.getState().vaultPath;
+        const noteId = crypto.randomUUID();
+        const now = new Date().toISOString();
+        const frontmatter = `---\nid: ${noteId}\ntitle: ${name}\ncreated: ${now}\nupdated: ${now}\ntags: []\n---\n\n`;
+        const path = `${name}.md`;
+        const filePath = `${vaultPath}/${path}`;
+        await writeTextFile(filePath, frontmatter);
+        loadNote(filePath, { id: filePath, path, title: name, content: "" });
+        openTab({ noteId: filePath, title: name, path });
+        fileTreeRef.current?.refresh();
+      } else {
+        const note = await api.notes.create({ path: `${name}.md` });
+        loadNote(note.id, note);
+        openTab({ noteId: note.id, title: note.title, path: note.path });
+        fileTreeRef.current?.refresh();
+      }
     } catch (e) {
       console.error("Failed to create note:", e);
     }
@@ -49,10 +65,40 @@ function FileTreePane() {
 
   const openDaily = async () => {
     try {
-      const note = await api.daily.today();
-      if (note?.id) {
-        loadNote(note.id, note);
-        openTab({ noteId: note.id, title: note.title, path: note.path });
+      if (isTauri()) {
+        const vaultPath = useSettingsStore.getState().vaultPath;
+        const today = new Date().toISOString().slice(0, 10);
+        const relPath = `daily/${today}.md`;
+        const filePath = `${vaultPath}/${relPath}`;
+
+        const { exists, readTextFile, writeTextFile, mkdir } = await import("@tauri-apps/plugin-fs");
+
+        if (await exists(filePath)) {
+          const raw = await readTextFile(filePath);
+          const content = raw.startsWith("---\n")
+            ? raw.slice(raw.indexOf("\n---\n", 4) + 5).trimStart()
+            : raw;
+          loadNote(filePath, { id: filePath, path: relPath, title: today, content });
+          openTab({ noteId: filePath, title: today, path: relPath });
+        } else {
+          // Create daily directory if needed
+          const dailyDir = `${vaultPath}/daily`;
+          if (!(await exists(dailyDir))) {
+            await mkdir(dailyDir);
+          }
+          const noteId = crypto.randomUUID();
+          const now = new Date().toISOString();
+          const frontmatter = `---\nid: ${noteId}\ntitle: ${today}\ncreated: ${now}\nupdated: ${now}\ntags: ["daily"]\n---\n\n# ${today}\n\n`;
+          await writeTextFile(filePath, frontmatter);
+          loadNote(filePath, { id: filePath, path: relPath, title: today, content: `# ${today}\n\n` });
+          openTab({ noteId: filePath, title: today, path: relPath });
+        }
+      } else {
+        const note = await api.daily.today();
+        if (note?.id) {
+          loadNote(note.id, note);
+          openTab({ noteId: note.id, title: note.title, path: note.path });
+        }
       }
     } catch (e) {
       console.error("Failed to open daily note:", e);

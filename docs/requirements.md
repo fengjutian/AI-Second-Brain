@@ -230,4 +230,68 @@
 
 ---
 
-> 下一步：出架构设计文档。
+## 6. 本地优先架构策略
+
+### 6.1 核心原则
+
+系统必须遵循 **本地优先 (Local-first)** 原则：
+
+1. **无后端可运行**：在 Tauri 桌面端，即使 FastAPI 后端未启动/不可用，核心笔记功能（浏览、编辑、创建、删除）必须可用
+2. **降级而非崩溃**：需要后端的功能（AI、搜索、图谱等）在后端不可用时应优雅降级，展示明确提示，不影响其他功能
+3. **浏览器模式依赖后端**：在纯浏览器开发模式下，后端是必需的（HTTP API 是唯一数据通道）
+4. **文件即真实**：所有数据以 `.md` 文件存储于本地文件系统，不以来数据库
+
+### 6.2 功能降级矩阵
+
+| 功能 | 模式 | 后端依赖 | 降级状态 | 降级行为 |
+|------|------|----------|----------|----------|
+| 📂 文件列表 | Tauri | ✅ 已降级 | `@tauri-apps/plugin-fs` `readDir()` | 直读文件系统，零后端依赖 |
+| | 浏览器 | ❌ 必须 | 无降级 | 依赖 `api.notes.list()` |
+| 📖 打开笔记 | Tauri | ✅ 已降级 | `readTextFile()` | 直读 .md 文件，自动剥离 frontmatter |
+| | 浏览器 | ❌ 必须 | 无降级 | 依赖 `api.notes.get()` |
+| ✏️ 自动保存 | Tauri | ❌ **未降级** | ⚠️ 高风险 | 数据丢失风险——编辑后若后端不可用，内容存在内存中，刷新即丢失 |
+| | 浏览器 | ❌ 必须 | 无降级 | 依赖 `api.notes.update()` |
+| ➕ 新建笔记 | Tauri | ❌ **未降级** | ⚠️ 高风险 | 需 Tauri FS `writeTextFile()` + frontmatter 生成 |
+| | 浏览器 | ❌ 必须 | 无降级 | 依赖 `api.notes.create()` |
+| 🗑️ 删除笔记 | Tauri | ✅ 已降级 | `remove()` 作为 fallback | 先试 API，失败则直删 |
+| | 浏览器 | ❌ 必须 | 无降级 | 依赖 `api.notes.delete()` |
+| 📅 日记 (Daily) | 两种 | ❌ **未降级** | 中风险 | 依赖 `api.daily.today()` |
+| 🔗 出链/反链 | 两种 | ❌ **未降级** | 中风险 | 依赖 `api.notes.outgoingLinks/backlinks()` |
+| 🔍 全文搜索 | 两种 | ❌ **未降级** | 中风险 | 依赖 `api.search.keyword()` |
+| 🕸️ 知识图谱 | 两种 | ❌ **未降级** | 低风险 | 显示"无法加载"提示 |
+| 🤖 AI 聊天 | 两种 | ❌ **未降级** | 低风险 | 显示"AI 服务不可用" |
+| 🧠 AI 配置 | 两种 | ❌ **未降级** | 低风险 | 设置页永久加载中 |
+| 📥 导入 Obsidian | 两种 | ❌ **未降级** | 低风险 | 偶尔使用 |
+| 🎨 白板 (tldraw/Excalidraw) | 两种 | ✅ 零依赖 | ✅ 完美 | 纯前端，无后端需求 |
+| 🌓 主题切换 | 两种 | ✅ 零依赖 | ✅ 完美 | localStorage |
+| 🔌 核心插件 | 两种 | ✅ 零依赖 | ✅ 完美 | 纯前端注册 |
+
+### 6.3 待实现的降级方案（优先级排序）
+
+| 优先级 | 功能 | 当前状态 | 建议实现 |
+|--------|------|----------|----------|
+| **P0** | 新建笔记 | ❌ 无降级 | Tauri: 用 `writeTextFile()` 写 .md 文件（含 YAML frontmatter），同时通知后端异步索引。浏览器: 无降级（必须后端） |
+| **P0** | 自动保存 | ❌ 无降级 | Tauri: 用 `writeTextFile()` 直接覆写 .md 文件。前端维护内容缓存，后端可用时同步索引 |
+| **P1** | 日记 | ❌ 无降级 | Tauri: 前端按日期计算路径（`daily/YYYY-MM-DD.md`），`exists()` 检查，不存在则用模板创建 |
+| **P1** | 搜索 | ❌ 无降级 | Tauri: 前端正则全文搜索（小规模可用）。大规模依赖后端 FTS5 |
+| **P1** | 出链/反链 | ❌ 无降级 | Tauri: 前端解析所有笔记的 `[[link]]` 构建内存索引 |
+| **P2** | 图谱 | ❌ 无降级 | 显示"后端未运行"提示即可，非核心路径 |
+| **P2** | Vault 操作 | ❌ 无降级 | Tauri: `settingsStore` 直接记录 vaultPath 到 localStorage，跳过 `api.vaults.open()` |
+
+### 6.4 架构约束
+
+- **Tauri mode**: `isTauri()` === true → 所有文件 I/O 优先使用 `@tauri-apps/plugin-fs`，后端 API 作为增强（索引、AI）
+- **Browser mode**: `isTauri()` === false → 所有操作必须通过 HTTP API，无法降级
+- **前端数据层**: `useNoteStore` 为纯内存缓存，不依赖后端。由调用方（FileTree、Editor 等）负责填充数据
+- **文件格式**: 每个 `.md` 文件包含 YAML frontmatter（id、title、tags、created、updated），内容为纯 Markdown
+
+### 6.5 环境检测
+
+```ts
+// src/lib/env.ts
+export const isTauri = (): boolean =>
+  !!(window as any).__TAURI_INTERNALS__;
+export const isBrowser = (): boolean => !isTauri();
+```
+
+所有需要降级的代码路径通过 `isTauri()` 分支，Tauri 路径使用 Tauri FS API，浏览器路径使用 HTTP API。

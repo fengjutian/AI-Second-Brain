@@ -11,9 +11,10 @@ import { HoverPreview } from "@/components/editor/HoverPreview";
 import { SlashCommand } from "@/components/editor/SlashCommand";
 import { useSlashMenu, SlashMenu } from "@/components/editor/SlashMenu";
 import { api } from "@/lib/api";
+import { isTauri } from "@/lib/env";
 import {
   FaBold, FaItalic, FaStrikethrough, FaCode, FaHeading, FaListUl, FaListOl, FaQuoteRight, FaParagraph, FaGripVertical, FaUnderline, FaLink,
-  FaInfoCircle, FaChevronDown,
+  FaCircleInfo, FaChevronDown,
 } from "react-icons/fa6";
 import { cn } from "@/lib/utils";
 
@@ -94,12 +95,29 @@ export function Editor({ tabId, noteId }: EditorProps) {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
       saveTimerRef.current = setTimeout(async () => {
         try {
-          await api.notes.update(nid, { content: html });
+          if (isTauri()) {
+            // Tauri: write directly to .md file, preserving frontmatter
+            const { readTextFile, writeTextFile } = await import("@tauri-apps/plugin-fs");
+            const raw = await readTextFile(nid);
+            if (raw.startsWith("---\n")) {
+              const end = raw.indexOf("\n---\n", 4);
+              if (end !== -1) {
+                const frontmatter = raw.slice(0, end + 5);
+                await writeTextFile(nid, frontmatter + "\n" + html);
+              } else {
+                await writeTextFile(nid, html);
+              }
+            } else {
+              await writeTextFile(nid, html);
+            }
+          } else {
+            await api.notes.update(nid, { content: html });
+          }
           setDirty(tid, false);
         } catch {}
-      }, 1000);
-    },
-  });
+        }, 1000);
+      },
+    });
 
   useEffect(() => {
     if (editor && note) {
@@ -146,7 +164,7 @@ export function Editor({ tabId, noteId }: EditorProps) {
             )}
             title="元数据"
           >
-            <FaInfoCircle size={16} />
+            <FaCircleInfo size={16} />
           </button>
         </div>
 

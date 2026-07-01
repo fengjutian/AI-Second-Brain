@@ -178,10 +178,26 @@ export const FileTree = forwardRef<{ refresh: () => void }>(function FileTree(_p
 
   const handleCreateNote = async (name: string) => {
     const path = `${name}.md`;
-    const note = await api.notes.create({ path });
-    setNotes((prev) => [...prev, { id: note.id, path: note.path, title: note.title }]);
-    loadNote(note.id, note);
-    openTab({ noteId: note.id, title: note.title, path: note.path });
+
+    if (isTauri()) {
+      // Tauri: write .md file directly with YAML frontmatter
+      const { writeTextFile } = await import("@tauri-apps/plugin-fs");
+      const noteId = crypto.randomUUID();
+      const now = new Date().toISOString();
+      const frontmatter = `---\nid: ${noteId}\ntitle: ${name}\ncreated: ${now}\nupdated: ${now}\ntags: []\n---\n\n`;
+      const filePath = `${vaultPath}/${path}`;
+      await writeTextFile(filePath, frontmatter);
+      const title = name;
+      const content = "";
+      setNotes((prev) => [...prev, { id: filePath, path, title }]);
+      loadNote(filePath, { id: filePath, path, title, content });
+      openTab({ noteId: filePath, title, path });
+    } else {
+      const note = await api.notes.create({ path });
+      setNotes((prev) => [...prev, { id: note.id, path: note.path, title: note.title }]);
+      loadNote(note.id, note);
+      openTab({ noteId: note.id, title: note.title, path: note.path });
+    }
   };
 
   const handleDeleteNote = useCallback(async (noteId: string) => {
