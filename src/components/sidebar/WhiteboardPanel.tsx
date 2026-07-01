@@ -28,18 +28,42 @@ export function WhiteboardPanel() {
     ? `${vaultPath.replace(/\\/g, "/")}/.aisb/${activeFile}.excalidraw`
     : null;
 
+  // Eagerly ensure .aisb directory exists on mount
+  useEffect(() => {
+    if (!isTauri() || !vaultPath) return;
+    const dir = `${vaultPath.replace(/\\/g, "/")}/.aisb`;
+    import("@tauri-apps/plugin-fs").then(async ({ exists, mkdir }) => {
+      const ok = await exists(dir);
+      if (!ok) {
+        await mkdir(dir).catch((e) => console.error("Whiteboard: failed to create .aisb dir:", e));
+      }
+    });
+  }, [vaultPath]);
+
   // Scan existing files
   const scanFiles = useCallback(async () => {
     if (!isTauri() || !vaultPath) return;
     const dirPath = `${vaultPath.replace(/\\/g, "/")}/.aisb`;
     const { exists, readDir, mkdir } = await import("@tauri-apps/plugin-fs");
-    if (!(await exists(dirPath))) { await mkdir(dirPath).catch(() => {}); return; }
+    if (!(await exists(dirPath))) {
+      await mkdir(dirPath).catch(() => {});
+      setFiles(["whiteboard"]); // ← fix: set default even on first run
+      return;
+    }
     const entries = await readDir(dirPath);
     const names = entries
       .filter((e) => e.name?.endsWith(".excalidraw"))
       .map((e) => e.name!.replace(/\.excalidraw$/, ""));
-    setFiles(names.length > 0 ? names : ["whiteboard"]);
-  }, [vaultPath]);
+    if (names.length === 0) {
+      setFiles(["whiteboard"]);
+    } else {
+      setFiles(names);
+      // Auto-select first file if current activeFile isn't in the list
+      if (!names.includes(activeFile) && activeFile !== "whiteboard") {
+        setActiveFile(names[0]);
+      }
+    }
+  }, [vaultPath, activeFile]);
 
   useEffect(() => { scanFiles(); }, [scanFiles]);
 
@@ -103,10 +127,15 @@ export function WhiteboardPanel() {
       const cacheKey = `${vaultPath}:${activeFile}`;
       const data = fileCache.get(cacheKey);
       if (data) {
-        const { writeTextFile } = await import("@tauri-apps/plugin-fs");
+        const { writeTextFile, exists, mkdir } = await import("@tauri-apps/plugin-fs");
+        const dir = `${vaultPath!.replace(/\\/g, "/")}/.aisb`;
+        if (!(await exists(dir))) await mkdir(dir).catch(() => {});
         await writeTextFile(savePath, JSON.stringify(data)).catch(() => {});
       }
     }
+    // Clear cache for new file so it loads fresh
+    const newCacheKey = `${vaultPath}:${name}`;
+    fileCache.delete(newCacheKey);
     setActiveFile(name);
     setFiles((prev) => prev.includes(name) ? prev : [...prev, name]);
   }, [savePath, vaultPath, activeFile]);
@@ -119,14 +148,14 @@ export function WhiteboardPanel() {
           <select
             value={activeFile}
             onChange={(e) => setActiveFile(e.target.value)}
-            className="text-[11px] bg-transparent text-zinc-600 dark:text-zinc-400 outline-none cursor-pointer"
+            className="text-[11px] bg-transparent text-zinc-600 dark:text-zinc-400 outline-none cursor-pointer max-w-[160px]"
           >
             {files.map((f) => (
-              <option key={f} value={f}>{f}.excalidraw</option>
+              <option key={f} value={f}>{f}</option>
             ))}
           </select>
         ) : (
-          <span className="text-[11px] text-zinc-400">{activeFile}.excalidraw</span>
+          <span className="text-[11px] text-zinc-400">{activeFile}</span>
         )}
         <button
           onClick={() => setNewDialogOpen(true)}
