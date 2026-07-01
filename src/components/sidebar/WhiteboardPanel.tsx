@@ -58,12 +58,12 @@ export function WhiteboardPanel() {
       setFiles(["whiteboard"]);
     } else {
       setFiles(names);
-      // Auto-select first file if current activeFile isn't in the list
-      if (!names.includes(activeFile) && activeFile !== "whiteboard") {
+      // Auto-select: if current file doesn't exist, switch to first
+      if (!names.includes(activeFile)) {
         setActiveFile(names[0]);
       }
     }
-  }, [vaultPath, activeFile]);
+  }, [vaultPath]); // Only rescan when vault changes
 
   useEffect(() => { scanFiles(); }, [scanFiles]);
 

@@ -26,18 +26,20 @@ fn spawn_terminal(app: AppHandle, state: State<'_, PtyState>, cwd: String, rows:
     cmd.arg("/K");
 
     let mut child = pty_pair.slave.spawn_command(cmd).map_err(|e| e.to_string())?;
-    let mut reader = BufReader::new(pty_pair.master.try_clone_reader().map_err(|e| e.to_string())?);
+    let reader = BufReader::new(pty_pair.master.try_clone_reader().map_err(|e| e.to_string())?);
     let writer = pty_pair.master.take_writer().map_err(|e| e.to_string())?;
+    let master = pty_pair.master;
 
     *state.writer.lock().unwrap() = Some(Box::new(writer));
-    *state.master.lock().unwrap() = Some(Box::new(pty_pair.master));
+    *state.master.lock().unwrap() = Some(master);
 
     let app_handle = app.clone();
     std::thread::spawn(move || {
         let mut line = String::new();
+        let mut r = reader;
         loop {
             line.clear();
-            match reader.read_line(&mut line) {
+            match r.read_line(&mut line) {
                 Ok(0) => break,
                 Ok(_) => { let _ = app_handle.emit("pty-output", &line); }
                 Err(_) => break,
@@ -61,8 +63,9 @@ fn send_to_terminal(state: State<'_, PtyState>, data: String) -> Result<(), Stri
 
 #[command]
 fn resize_pty(state: State<'_, PtyState>, rows: u16, cols: u16) -> Result<(), String> {
-    if let Some(master) = state.master.lock().unwrap().as_mut() {
-        master.resize(PtySize { rows, cols, pixel_width: 0, pixel_height: 0 })
+    let mut guard = state.master.lock().unwrap();
+    if let Some(ref mut master) = *guard {
+        (*master).resize(PtySize { rows, cols, pixel_width: 0, pixel_height: 0 })
             .map_err(|e| e.to_string())?;
     }
     Ok(())
