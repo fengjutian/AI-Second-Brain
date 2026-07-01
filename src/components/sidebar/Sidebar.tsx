@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { FaPlus, FaCalendar, FaTags, FaArrowLeft } from "react-icons/fa6";
 import { FileTree } from "@/components/sidebar/FileTree";
 import { SearchPanel } from "@/components/search/SearchPanel";
