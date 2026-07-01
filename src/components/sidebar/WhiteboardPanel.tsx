@@ -5,6 +5,7 @@ import { useSettingsStore } from "@/stores/settingsStore";
 import { useWhiteboardStore } from "@/stores/whiteboardStore";
 import { isTauri } from "@/lib/env";
 import { FaPlus } from "react-icons/fa6";
+import { InputDialog } from "@/components/ui/InputDialog";
 
 // Per-file cache: Map<filename, { elements, appState }>
 const fileCache = new Map<string, any>();
@@ -18,6 +19,7 @@ export function WhiteboardPanel() {
   const [files, setFiles] = useState<string[]>([]);
   const [activeFile, setActiveFile] = useState("whiteboard");
   const [initialData, setInitialData] = useState<any>(null);
+  const [newDialogOpen, setNewDialogOpen] = useState(false);
 
   const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const loadedRef = useRef(false);
@@ -78,21 +80,24 @@ export function WhiteboardPanel() {
       fileCache.set(cacheKey, data);
 
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = setTimeout(() => {
-        import("@tauri-apps/plugin-fs").then(({ writeTextFile }) => {
-          writeTextFile(savePath, JSON.stringify(data))
-            .then(() => { setSaved(true); setTimeout(() => setSaved(false), 1500); })
-            .catch(() => {});
-        });
+      saveTimerRef.current = setTimeout(async () => {
+        const { writeTextFile, exists, mkdir } = await import("@tauri-apps/plugin-fs");
+        // Ensure directory exists
+        const dir = `${vaultPath!.replace(/\\/g, "/")}/.aisb`;
+        const dirExists = await exists(dir);
+        if (!dirExists) await mkdir(dir).catch(() => {});
+        // Write file
+        await writeTextFile(savePath, JSON.stringify(data));
+        setSaved(true);
+        setTimeout(() => setSaved(false), 1500);
       }, 2000);
     }, [savePath, vaultPath, activeFile]);
 
   useEffect(() => () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); }, []);
 
-  const createNew = useCallback(async () => {
-    const name = prompt("新白板名称（不含扩展名）：");
+  const createNew = useCallback(async (name: string) => {
     if (!name) return;
-    // Save current first
+    // Save current board before switching
     if (saveTimerRef.current) { clearTimeout(saveTimerRef.current); }
     if (isTauri() && savePath) {
       const cacheKey = `${vaultPath}:${activeFile}`;
@@ -124,13 +129,21 @@ export function WhiteboardPanel() {
           <span className="text-[11px] text-zinc-400">{activeFile}.excalidraw</span>
         )}
         <button
-          onClick={createNew}
+          onClick={() => setNewDialogOpen(true)}
           className="flex items-center gap-0.5 text-[11px] text-accent hover:text-accent-hover ml-1"
           title="新建白板"
         >
           <FaPlus size={10} /> 新建
         </button>
       </div>
+      <InputDialog
+        open={newDialogOpen}
+        onOpenChange={setNewDialogOpen}
+        title="新建白板"
+        placeholder="白板名称（不含扩展名）"
+        confirmLabel="创建"
+        onConfirm={createNew}
+      />
       <div style={{ flex: 1, minHeight: 0 }}>
         <Excalidraw
           key={`${vaultPath}:${activeFile}`}
