@@ -17,7 +17,7 @@ import {
   FaBold, FaItalic, FaStrikethrough, FaCode, FaHeading, FaListUl, FaListOl, FaQuoteRight, FaParagraph, FaGripVertical, FaUnderline, FaLink,
   FaCircleInfo, FaChevronDown,
 } from "react-icons/fa6";
-import { cn } from "@/lib/utils";
+import { cn, htmlToMarkdown } from "@/lib/utils";
 
 const WikiLink = Mention.configure({
   suggestion: wikiLinkSuggestion,
@@ -117,6 +117,7 @@ export function Editor({ tabId, noteId }: EditorProps) {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
       pendingSaveRef.current = async () => {
         try {
+          const md = htmlToMarkdown(html);
           if (isTauri()) {
             const { readTextFile, writeTextFile } = await import("@tauri-apps/plugin-fs");
             const raw = await readTextFile(nid);
@@ -124,15 +125,15 @@ export function Editor({ tabId, noteId }: EditorProps) {
               const end = raw.indexOf("\n---\n", 4);
               if (end !== -1) {
                 const frontmatter = raw.slice(0, end + 5);
-                await writeTextFile(nid, frontmatter + "\n" + html);
+                await writeTextFile(nid, frontmatter + "\n" + md);
               } else {
-                await writeTextFile(nid, html);
+                await writeTextFile(nid, md);
               }
             } else {
-              await writeTextFile(nid, html);
+              await writeTextFile(nid, md);
             }
           } else {
-            await api.notes.update(nid, { content: html });
+            await api.notes.update(nid, { content: md });
           }
           if (saveVersionRef.current === myVersion) {
             setDirty(tid, false);

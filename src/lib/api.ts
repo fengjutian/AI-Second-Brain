@@ -49,8 +49,11 @@ export const api = {
     semantic: (q: string) => request<any[]>(`/search/semantic?q=${encodeURIComponent(q)}`),
   },
   chat: {
-    send: (messages: { role: string; content: string }[]) =>
-      request<any>("/chat", { method: "POST", body: JSON.stringify({ messages }) }),
+    send: (message: string, history?: { role: string; content: string }[]) =>
+      request<{ response: string }>("/chat", {
+        method: "POST",
+        body: JSON.stringify({ message, history }),
+      }).then((r) => r.response),
   },
   daily: {
     today: () => request<any>("/daily/today"),

@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import cytoscape from "cytoscape";
-import { FaSpinner } from "react-icons/fa6";
+import { FaSpinner, FaPlus, FaMinus, FaExpand } from "react-icons/fa6";
 import { api } from "@/lib/api";
 
 interface GraphCoreProps {
@@ -69,8 +69,23 @@ export function GraphCore({ fontSize = 10, edgeWidth = 1.5 }: GraphCoreProps) {
             });
           }
         });
-        cy.layout({ name: "cose" }).run();
+        // Layout with fit to center nodes in the viewport
+        cy.layout({ name: "cose", fit: true, animate: true, animationDuration: 500 }).run();
         setLoading(false);
+
+        // Tap node → open note
+        cy.on("tap", "node", (evt) => {
+          const node = evt.target;
+          const noteId = node.data("id");
+          const label = node.data("label");
+          if (noteId) {
+            window.dispatchEvent(
+              new CustomEvent("app:open-note", {
+                detail: { id: noteId, title: label },
+              })
+            );
+          }
+        });
       })
       .catch((e) => {
         if (!mounted) return;
@@ -86,8 +101,20 @@ export function GraphCore({ fontSize = 10, edgeWidth = 1.5 }: GraphCoreProps) {
     };
   }, [fontSize, edgeWidth]);
 
+  const handleZoomIn = useCallback(() => {
+    cyRef.current?.zoom({ level: cyRef.current.zoom() * 1.3, renderedPosition: { x: containerRef.current!.clientWidth / 2, y: containerRef.current!.clientHeight / 2 } });
+  }, []);
+
+  const handleZoomOut = useCallback(() => {
+    cyRef.current?.zoom({ level: cyRef.current.zoom() * 0.7, renderedPosition: { x: containerRef.current!.clientWidth / 2, y: containerRef.current!.clientHeight / 2 } });
+  }, []);
+
+  const handleFit = useCallback(() => {
+    cyRef.current?.fit(undefined, 50);
+  }, []);
+
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col relative">
       {loading && (
         <div className="flex items-center justify-center py-4 gap-2 text-xs text-zinc-400">
           <FaSpinner size={12} className="animate-spin text-blue-500" />
@@ -100,6 +127,33 @@ export function GraphCore({ fontSize = 10, edgeWidth = 1.5 }: GraphCoreProps) {
         </div>
       )}
       <div ref={containerRef} className="flex-1 graph-container min-h-0" />
+
+      {/* Floating toolbar — zoom + fit */}
+      {!loading && !error && (
+        <div className="absolute bottom-4 right-4 flex flex-col gap-1 z-10">
+          <button
+            onClick={handleZoomIn}
+            className="w-8 h-8 flex items-center justify-center rounded-md bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow-sm hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors text-zinc-600 dark:text-zinc-400"
+            title="放大"
+          >
+            <FaPlus size={14} />
+          </button>
+          <button
+            onClick={handleZoomOut}
+            className="w-8 h-8 flex items-center justify-center rounded-md bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow-sm hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors text-zinc-600 dark:text-zinc-400"
+            title="缩小"
+          >
+            <FaMinus size={14} />
+          </button>
+          <button
+            onClick={handleFit}
+            className="w-8 h-8 flex items-center justify-center rounded-md bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow-sm hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors text-zinc-600 dark:text-zinc-400"
+            title="全览"
+          >
+            <FaExpand size={14} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

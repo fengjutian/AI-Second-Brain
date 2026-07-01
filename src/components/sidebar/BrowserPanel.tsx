@@ -2,8 +2,8 @@ import { useState, useRef } from "react";
 import { FaArrowLeft, FaArrowRight, FaRotateRight, FaMagnifyingGlass } from "react-icons/fa6";
 
 export function BrowserPanel() {
-  const [url, setUrl] = useState("https://www.google.com");
-  const [inputUrl, setInputUrl] = useState("https://www.google.com");
+  const [url, setUrl] = useState("https://www.baidu.com");
+  const [inputUrl, setInputUrl] = useState("https://www.baidu.com");
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const navigate = () => {
