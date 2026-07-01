@@ -10,6 +10,9 @@ export default defineConfig({
     },
   },
   clearScreen: false,
+  optimizeDeps: {
+    entries: ["./src/**/*.{ts,tsx}"],
+  },
   server: {
     port: 1420,
     strictPort: true,

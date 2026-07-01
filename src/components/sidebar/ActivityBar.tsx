@@ -43,9 +43,8 @@ export function ActivityBar({ activePane, onPaneChange }: ActivityBarProps) {
         </button>
       ))}
 
-      <div className="flex-1" />
-
-      {/* Whiteboard */}
+      {/* Whiteboard — navigates to full-page board */}
+      <div className="w-6 h-px bg-zinc-300 dark:bg-zinc-600 my-1" />
       <button
         onClick={() => navigate("/whiteboard")}
         className="w-10 h-10 flex items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors relative group"
@@ -57,7 +56,7 @@ export function ActivityBar({ activePane, onPaneChange }: ActivityBarProps) {
         </span>
       </button>
 
-      {/* Settings */}
+      <div className="flex-1" />
       <button
         onClick={() => navigate("/settings")}
         className="w-10 h-10 flex items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors relative group"
