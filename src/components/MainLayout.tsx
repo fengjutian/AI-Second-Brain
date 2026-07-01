@@ -1,21 +1,22 @@
 import { Sidebar } from "@/components/sidebar/Sidebar";
+import { ActivityBar, type SidebarPane } from "@/components/sidebar/ActivityBar";
 import { TabManager } from "@/components/tabs/TabManager";
 import { RightSidebar } from "@/components/sidebar/RightSidebar";
+import { GraphPanel } from "@/components/sidebar/GraphPanel";
 import { CommandPalette } from "@/components/CommandPalette";
 import { StatusBar } from "@/components/StatusBar";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { api } from "@/lib/api";
 import { useState, useEffect, useRef } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
-import { FaChevronDown, FaFolderOpen, FaPlus, FaCheck, FaTrashCan, FaCodeBranch } from "react-icons/fa6";
+import { FaChevronDown, FaFolderOpen, FaPlus, FaCheck, FaTrashCan } from "react-icons/fa6";
 import { cn } from "@/lib/utils";
-import { useNavigate } from "react-router-dom";
 
 export function MainLayout() {
   const vaultPath = useSettingsStore((s) => s.vaultPath);
   const vaultName = useSettingsStore((s) => s.vaultName);
   const [showCmdPalette, setShowCmdPalette] = useState(false);
-  const navigate = useNavigate();
+  const [activePane, setActivePane] = useState<SidebarPane>("files");
 
   // Global keyboard shortcuts
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -36,23 +37,24 @@ export function MainLayout() {
         <span className="font-medium">{vaultName || "AI Second Brain"}</span>
         {vaultPath && <VaultSwitcher />}
         <div className="flex-1" />
-        <button
-          onClick={() => navigate("/graph")}
-          className="flex items-center gap-1 px-2 py-0.5 rounded text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
-          title="知识图谱"
-        >
-          <FaCodeBranch size={14} className="text-amber-500" />
-          图谱
-        </button>
       </div>
 
       {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
-        <div className="flex-1 flex flex-col min-w-0">
-          <TabManager />
-        </div>
-        <RightSidebar />
+        <ActivityBar activePane={activePane} onPaneChange={setActivePane} />
+        {activePane !== "graph" && <Sidebar activePane={activePane} />}
+        {activePane === "graph" ? (
+          <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-zinc-950">
+            <GraphPanel />
+          </div>
+        ) : (
+          <>
+            <div className="flex-1 flex flex-col min-w-0">
+              <TabManager />
+            </div>
+            <RightSidebar />
+          </>
+        )}
       </div>
 
       <StatusBar />

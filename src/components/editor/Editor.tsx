@@ -12,9 +12,8 @@ import { SlashCommand } from "@/components/editor/SlashCommand";
 import { useSlashMenu, SlashMenu } from "@/components/editor/SlashMenu";
 import { api } from "@/lib/api";
 import {
-  Bold, Italic, Strikethrough, Code, Heading1, Heading2, Heading3,
-  List, ListOrdered, Quote, Pilcrow, GripVertical, Underline, Link,
-} from "lucide-react";
+  FaBold, FaItalic, FaStrikethrough, FaCode, FaHeading, FaListUl, FaListOl, FaQuoteRight, FaParagraph, FaGripVertical, FaUnderline, FaLink,
+} from "react-icons/fa6";
 import { cn } from "@/lib/utils";
 
 const WikiLink = Mention.configure({
@@ -147,10 +146,10 @@ export function Editor({ tabId, noteId }: EditorProps) {
             >
               {/* Inline marks */}
               <div className="flex items-center gap-0.5">
-                <BubbleBtn active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()} title="加粗"><Bold size={15} /></BubbleBtn>
-                <BubbleBtn active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()} title="斜体"><Italic size={15} /></BubbleBtn>
-                <BubbleBtn active={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()} title="删除线"><Strikethrough size={15} /></BubbleBtn>
-                <BubbleBtn active={editor.isActive("code")} onClick={() => editor.chain().focus().toggleCode().run()} title="行内代码"><Code size={15} /></BubbleBtn>
+                <BubbleBtn active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()} title="加粗"><FaBold size={15} /></BubbleBtn>
+                <BubbleBtn active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()} title="斜体"><FaItalic size={15} /></BubbleBtn>
+                <BubbleBtn active={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()} title="删除线"><FaStrikethrough size={15} /></BubbleBtn>
+                <BubbleBtn active={editor.isActive("code")} onClick={() => editor.chain().focus().toggleCode().run()} title="行内代码"><FaCode size={15} /></BubbleBtn>
                 <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-700 mx-0.5" />
                 <BubbleBtn active={editor.isActive("link")} onClick={() => {
                   const prev = editor.getAttributes("link").href;
@@ -158,18 +157,18 @@ export function Editor({ tabId, noteId }: EditorProps) {
                   if (url === null) return;
                   if (url === "") { editor.chain().focus().unsetLink().run(); return; }
                   editor.chain().focus().setLink({ href: url }).run();
-                }} title="链接"><Link size={15} /></BubbleBtn>
-                <BubbleBtn active={false} onClick={() => editor.chain().focus().unsetAllMarks().clearNodes().run()} title="清除格式"><Underline size={15} /></BubbleBtn>
+                }} title="链接"><FaLink size={15} /></BubbleBtn>
+                <BubbleBtn active={false} onClick={() => editor.chain().focus().unsetAllMarks().clearNodes().run()} title="清除格式"><FaUnderline size={15} /></BubbleBtn>
               </div>
               {/* Block type */}
               <div className="flex items-center gap-0.5 border-t border-zinc-100 dark:border-zinc-800 pt-1">
-                <BubbleBtn active={editor.isActive("heading", { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} title="标题1"><Heading1 size={15} /></BubbleBtn>
-                <BubbleBtn active={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} title="标题2"><Heading2 size={15} /></BubbleBtn>
-                <BubbleBtn active={editor.isActive("heading", { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} title="标题3"><Heading3 size={15} /></BubbleBtn>
+                <BubbleBtn active={editor.isActive("heading", { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} title="标题1"><FaHeading size={15} /></BubbleBtn>
+                <BubbleBtn active={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} title="标题2"><FaHeading size={15} /></BubbleBtn>
+                <BubbleBtn active={editor.isActive("heading", { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} title="标题3"><FaHeading size={15} /></BubbleBtn>
                 <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-700 mx-0.5" />
-                <BubbleBtn active={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()} title="无序列表"><List size={15} /></BubbleBtn>
-                <BubbleBtn active={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()} title="有序列表"><ListOrdered size={15} /></BubbleBtn>
-                <BubbleBtn active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()} title="引用"><Quote size={15} /></BubbleBtn>
+                <BubbleBtn active={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()} title="无序列表"><FaListUl size={15} /></BubbleBtn>
+                <BubbleBtn active={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()} title="有序列表"><FaListOl size={15} /></BubbleBtn>
+                <BubbleBtn active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()} title="引用"><FaQuoteRight size={15} /></BubbleBtn>
               </div>
             </BubbleMenu>
           )}
@@ -185,13 +184,13 @@ export function Editor({ tabId, noteId }: EditorProps) {
 
 // ── Notion-style Block Handle ──
 const BLOCK_OPTIONS = [
-  { id: "paragraph", icon: Pilcrow, label: "正文" },
-  { id: "h1", icon: Heading1, label: "标题 1" },
-  { id: "h2", icon: Heading2, label: "标题 2" },
-  { id: "h3", icon: Heading3, label: "标题 3" },
-  { id: "bulletList", icon: List, label: "无序列表" },
-  { id: "orderedList", icon: ListOrdered, label: "有序列表" },
-  { id: "blockquote", icon: Quote, label: "引用" },
+  { id: "paragraph", icon: FaParagraph, label: "正文" },
+  { id: "h1", icon: FaHeading, label: "标题 1" },
+  { id: "h2", icon: FaHeading, label: "标题 2" },
+  { id: "h3", icon: FaHeading, label: "标题 3" },
+  { id: "bulletList", icon: FaListUl, label: "无序列表" },
+  { id: "orderedList", icon: FaListOl, label: "有序列表" },
+  { id: "blockquote", icon: FaQuoteRight, label: "引用" },
 ] as const;
 
 function getActiveBlock(editor: NonNullable<ReturnType<typeof useEditor>>) {
@@ -277,7 +276,7 @@ function BlockHandle({ editor }: { editor: NonNullable<ReturnType<typeof useEdit
           className="p-1 rounded text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
           title="块类型"
         >
-          <GripVertical size={16} />
+          <FaGripVertical size={16} />
         </button>
 
         {/* Dropdown */}
