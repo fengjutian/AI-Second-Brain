@@ -3,6 +3,7 @@ import { FaPlus, FaCalendar, FaTags, FaArrowLeft } from "react-icons/fa6";
 import { FileTree } from "@/components/sidebar/FileTree";
 import { SearchPanel } from "@/components/search/SearchPanel";
 import { CalendarPanel } from "@/components/sidebar/CalendarPanel";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import type { SidebarPane } from "@/components/sidebar/ActivityBar";
 import { useNoteStore } from "@/stores/noteStore";
 import { useTabStore } from "@/stores/tabStore";
@@ -10,6 +11,7 @@ import { useSettingsStore } from "@/stores/settingsStore";
 import { api } from "@/lib/api";
 import { isTauri } from "@/lib/env";
 import { InputDialog } from "@/components/ui/InputDialog";
+import { resetWikiLinkCache } from "@/components/editor/WikiLink";
 
 interface SidebarProps {
   activePane: SidebarPane;
@@ -26,7 +28,9 @@ export function Sidebar({ activePane }: SidebarProps) {
           <SearchPane />
         </div>
         <div className={activePane === "calendar" ? "animate-fade-in" : "hidden"}>
-          <CalendarPanel />
+          <ErrorBoundary fallback={<div className="text-xs text-zinc-400 p-2">日历加载失败</div>}>
+            <CalendarPanel />
+          </ErrorBoundary>
         </div>
       </div>
     </div>
@@ -56,11 +60,13 @@ function FileTreePane() {
         loadNote(filePath, { id: filePath, path, title: name, content: "" });
         openTab({ noteId: filePath, title: name, path });
         fileTreeRef.current?.refresh();
+        resetWikiLinkCache();
       } else {
         const note = await api.notes.create({ path: `${name}.md` });
         loadNote(note.id, note);
         openTab({ noteId: note.id, title: note.title, path: note.path });
         fileTreeRef.current?.refresh();
+        resetWikiLinkCache();
       }
     } catch (e) {
       console.error("Failed to create note:", e);
@@ -96,12 +102,14 @@ function FileTreePane() {
           await writeTextFile(filePath, frontmatter);
           loadNote(filePath, { id: filePath, path: relPath, title: today, content: `# ${today}\n\n` });
           openTab({ noteId: filePath, title: today, path: relPath });
+          resetWikiLinkCache();
         }
       } else {
         const note = await api.daily.today();
         if (note?.id) {
           loadNote(note.id, note);
           openTab({ noteId: note.id, title: note.title, path: note.path });
+          resetWikiLinkCache();
         }
       }
     } catch (e) {

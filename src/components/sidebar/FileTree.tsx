@@ -7,6 +7,7 @@ import { useNoteStore } from "@/stores/noteStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { cn } from "@/lib/utils";
 import { InputDialog } from "@/components/ui/InputDialog";
+import { resetWikiLinkCache } from "@/components/editor/WikiLink";
 
 interface TreeNode {
   name: string;
@@ -209,10 +210,12 @@ export const FileTree = forwardRef<{ refresh: () => void }>(function FileTree(_p
       setNotes((prev) => [...prev, { id: filePath, path, title }]);
       loadNote(filePath, { id: filePath, path, title, content });
       openTab({ noteId: filePath, title, path });
+      resetWikiLinkCache();
     } else {
       const note = await api.notes.create({ path });
       setNotes((prev) => [...prev, { id: note.id, path: note.path, title: note.title }]);
       loadNote(note.id, note);
+      resetWikiLinkCache();
       openTab({ noteId: note.id, title: note.title, path: note.path });
     }
   };

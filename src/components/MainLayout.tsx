@@ -4,14 +4,25 @@ import { TabManager } from "@/components/tabs/TabManager";
 import { RightSidebar } from "@/components/sidebar/RightSidebar";
 import { GraphPanel } from "@/components/sidebar/GraphPanel";
 import { CommandPalette } from "@/components/CommandPalette";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { StatusBar } from "@/components/StatusBar";
 import { WhiteboardPanel } from "@/components/sidebar/WhiteboardPanel";
+import { BrowserPanel } from "@/components/sidebar/BrowserPanel";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { api } from "@/lib/api";
 import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { FaChevronDown, FaFolderOpen, FaPlus, FaCheck, FaTrashCan } from "react-icons/fa6";
 import { cn } from "@/lib/utils";
+
+/** Compact fallback for panel-level errors — keeps the rest of the app alive. */
+function PanelError({ label }: { label: string }) {
+  return (
+    <div className="flex items-center justify-center h-full text-sm text-zinc-400">
+      {label || "面板"} 加载失败
+    </div>
+  );
+}
 
 export function MainLayout() {
   const vaultPath = useSettingsStore((s) => s.vaultPath);
@@ -43,16 +54,21 @@ export function MainLayout() {
       {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
         <ActivityBar activePane={activePane} onPaneChange={setActivePane} />
-        {activePane !== "graph" && activePane !== "whiteboard" && (
+        {activePane !== "graph" && activePane !== "whiteboard" && activePane !== "browser" && (
           <Sidebar activePane={activePane} />
         )}
         <div className={activePane === "graph" ? "flex-1 min-w-0 bg-white dark:bg-zinc-950 animate-slide-in-right" : "hidden"}>
-          <GraphPanel />
+          <ErrorBoundary fallback={<PanelError label="图谱" />}>
+            <GraphPanel />
+          </ErrorBoundary>
         </div>
         <div className={activePane === "whiteboard" ? "flex-1 flex flex-col min-w-0" : "hidden"}>
           <WhiteboardPanel />
         </div>
-        {activePane !== "graph" && activePane !== "whiteboard" ? (
+        <div className={activePane === "browser" ? "flex-1 flex flex-col min-w-0" : "hidden"}>
+          <BrowserPanel />
+        </div>
+        {activePane !== "graph" && activePane !== "whiteboard" && activePane !== "browser" ? (
           <>
             <div className="flex-1 flex flex-col min-w-0 animate-fade-in">
               <TabManager />

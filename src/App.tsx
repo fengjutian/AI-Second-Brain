@@ -11,6 +11,7 @@ import { DailyReviewPlugin } from "@/plugins/daily-review";
 import { WordCountPlugin } from "@/plugins/word-count";
 import { MarkdownFormatPlugin } from "@/plugins/markdown-format";
 import { api } from "@/lib/api";
+import { closeIndex } from "@/lib/localIndex";
 import { useEffect } from "react";
 
 export default function App() {
@@ -43,6 +44,7 @@ export default function App() {
 
     return () => {
       pluginStore.deactivateAll();
+      closeIndex().catch(() => {});
     };
   }, [vaultPath]);
 

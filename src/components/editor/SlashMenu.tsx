@@ -8,6 +8,8 @@ export function useSlashMenu() {
   const [selectedIdx, setSelectedIdx] = useState(0);
   const commandRef = useRef<(item: SlashCommandItem) => void>(() => {});
   const selectedIdxRef = useRef(0);
+  const itemsRef = useRef(items);
+  itemsRef.current = items; // always current, never triggers re-subscribe
 
   // Keep ref in sync
   useEffect(() => {
@@ -43,10 +45,11 @@ export function useSlashMenu() {
 
     const onKey = (e: Event) => {
       const keyEvent = (e as CustomEvent).detail.event as KeyboardEvent;
+      const currentItems = itemsRef.current;
       if (keyEvent.key === "ArrowDown") {
         keyEvent.preventDefault();
         setSelectedIdx((i) => {
-          const next = Math.min(i + 1, items.length - 1);
+          const next = Math.min(i + 1, currentItems.length - 1);
           return next;
         });
       } else if (keyEvent.key === "ArrowUp") {
@@ -55,8 +58,8 @@ export function useSlashMenu() {
       } else if (keyEvent.key === "Enter") {
         keyEvent.preventDefault();
         const idx = selectedIdxRef.current;
-        if (items.length > 0 && idx < items.length) {
-          commandRef.current(items[idx]);
+        if (currentItems.length > 0 && idx < currentItems.length) {
+          commandRef.current(currentItems[idx]);
         }
         setVisible(false);
       }
@@ -74,7 +77,7 @@ export function useSlashMenu() {
       window.removeEventListener("slash:keydown", onKey);
       window.removeEventListener("slash:hide", onHide);
     };
-  }, [items]); // Re-subscribe when items change
+  }, []); // Subscribe once — items read via itemsRef, not closure
 
   const handleSelect = useCallback((item: SlashCommandItem) => {
     commandRef.current(item);

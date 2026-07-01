@@ -38,6 +38,7 @@ export function Editor({ tabId, noteId }: EditorProps) {
   const updateTitle = useTabStore((s) => s.updateTitle);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const pendingSaveRef = useRef<(() => Promise<void>) | null>(null);
+  const saveVersionRef = useRef(0); // prevents dirty-clean flicker during continuous typing
   const noteIdRef = useRef(noteId);
   const tabIdRef = useRef(tabId);
   noteIdRef.current = noteId;
@@ -45,6 +46,7 @@ export function Editor({ tabId, noteId }: EditorProps) {
   const [showMeta, setShowMeta] = useState(false);
   const [hoverTarget, setHoverTarget] = useState<string | null>(null);
   const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null);
+  const previewHoveredRef = useRef(false);
   const hoverCallbacks = useRef<{ onHover: Function; onLeave: Function }>({
     onHover: () => {},
     onLeave: () => {},
@@ -56,6 +58,7 @@ export function Editor({ tabId, noteId }: EditorProps) {
       setHoverPos(pos);
     },
     onLeave: () => {
+      if (previewHoveredRef.current) return; // preview is being hovered — don't close
       setHoverTarget(null);
       setHoverPos(null);
     },
@@ -108,12 +111,13 @@ export function Editor({ tabId, noteId }: EditorProps) {
       const tid = tabIdRef.current;
       setContent(nid, html);
       setDirty(tid, true);
+      saveVersionRef.current++;
+      const myVersion = saveVersionRef.current;
 
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
       pendingSaveRef.current = async () => {
         try {
           if (isTauri()) {
-            // Tauri: write directly to .md file, preserving frontmatter
             const { readTextFile, writeTextFile } = await import("@tauri-apps/plugin-fs");
             const raw = await readTextFile(nid);
             if (raw.startsWith("---\n")) {
@@ -130,7 +134,9 @@ export function Editor({ tabId, noteId }: EditorProps) {
           } else {
             await api.notes.update(nid, { content: html });
           }
-          setDirty(tid, false);
+          if (saveVersionRef.current === myVersion) {
+            setDirty(tid, false);
+          }
         } catch {}
       };
       saveTimerRef.current = setTimeout(() => {
@@ -248,7 +254,16 @@ export function Editor({ tabId, noteId }: EditorProps) {
           )}
 
           <EditorContent editor={editor} />
-          <HoverPreview target={hoverTarget} position={hoverPos} />
+          <HoverPreview
+            target={hoverTarget}
+            position={hoverPos}
+            onMouseEnter={() => { previewHoveredRef.current = true; }}
+            onMouseLeave={() => {
+              previewHoveredRef.current = false;
+              setHoverTarget(null);
+              setHoverPos(null);
+            }}
+          />
         </div>
       </div>
       <SlashOverlay editor={editor} />

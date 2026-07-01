@@ -28,7 +28,7 @@ function groupByDate(notes: NoteEntry[]): Map<string, NoteEntry[]> {
 export function CalendarPanel() {
   const [notes, setNotes] = useState<NoteEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [today] = useState(() => new Date());
+  const today = new Date(); // Re-computed each render — stays accurate across midnight
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth()); // 0-based
   const [selectedDate, setSelectedDate] = useState<string | null>(null);

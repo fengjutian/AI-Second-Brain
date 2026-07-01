@@ -13,7 +13,6 @@ interface PluginEntry {
 interface PluginState {
   plugins: PluginEntry[];
   loaded: boolean;
-  eventHandlers: Map<AppEvent, Array<(data?: any) => void>>;
 
   /** Load all plugins from plugins/ directory */
   loadPlugins: (vaultPath: string) => Promise<void>;
@@ -40,6 +39,7 @@ const ribbonIcons: Array<{ el: HTMLElement; id: string }> = [];
 const statusBarItems: HTMLElement[] = [];
 const settingTabs: SettingTab[] = [];
 const editorExtensions: any[] = [];
+const eventHandlers: Map<AppEvent, Array<(data?: any) => void>> = new Map();
 
 export function getRegisteredCommands(): Command[] {
   return commands;
@@ -53,10 +53,19 @@ export function getSettingTabs(): SettingTab[] {
   return settingTabs;
 }
 
+/** Reset all module-level plugin state (called on vault switch). */
+function clearPluginState() {
+  commands.length = 0;
+  ribbonIcons.length = 0;
+  statusBarItems.length = 0;
+  settingTabs.length = 0;
+  editorExtensions.length = 0;
+  eventHandlers.clear();
+}
+
 export const usePluginStore = create<PluginState>((set, get) => ({
   plugins: [],
   loaded: false,
-  eventHandlers: new Map(),
 
   registerCorePlugin: (plugin) => {
     const entry: PluginEntry = {
@@ -72,13 +81,9 @@ export const usePluginStore = create<PluginState>((set, get) => ({
   loadPlugins: async (vaultPath) => {
     // Clear previous
     await get().deactivateAll();
-    commands.length = 0;
-    ribbonIcons.length = 0;
-    statusBarItems.length = 0;
-    settingTabs.length = 0;
-    editorExtensions.length = 0;
+    clearPluginState();
 
-    set({ plugins: [], loaded: false, eventHandlers: new Map() });
+    set({ plugins: [], loaded: false });
 
     // Scan plugins/ directory
     const pluginsDir = `${vaultPath}/plugins`;
@@ -93,11 +98,11 @@ export const usePluginStore = create<PluginState>((set, get) => ({
   },
 
   activateAll: async () => {
-    const { plugins, eventHandlers } = get();
+    const { plugins } = get();
     for (const entry of plugins) {
       if (!entry.enabled) continue;
       try {
-        const ctx = createPluginContext(entry.manifest.id, eventHandlers);
+        const ctx = createPluginContext(entry.manifest.id);
         await entry.instance.activate(ctx);
         console.log(`[plugin] Activated: ${entry.manifest.id}`);
       } catch (e) {
@@ -123,11 +128,10 @@ export const usePluginStore = create<PluginState>((set, get) => ({
     if (!entry) return;
 
     if (enabled && !entry.enabled) {
-      const ctx = createPluginContext(id, get().eventHandlers);
+      const ctx = createPluginContext(id);
       await entry.instance.activate(ctx);
     } else if (!enabled && entry.enabled) {
       await entry.instance.deactivate();
-      // Remove commands, extensions etc.
     }
 
     set((s) => ({
@@ -138,17 +142,14 @@ export const usePluginStore = create<PluginState>((set, get) => ({
   },
 
   dispatchEvent: (event, data) => {
-    const handlers = get().eventHandlers.get(event);
+    const handlers = eventHandlers.get(event);
     if (handlers) {
       for (const fn of handlers) fn(data);
     }
   },
 }));
 
-function createPluginContext(
-  pluginId: string,
-  eventHandlers: Map<AppEvent, Array<(data?: any) => void>>
-): PluginContext {
+function createPluginContext(pluginId: string): PluginContext {
   return {
     pluginId,
 

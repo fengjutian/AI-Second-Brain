@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { FaArrowRight, FaArrowLeft, FaComment } from "react-icons/fa6";
 import { cn } from "@/lib/utils";
 import { ChatPanel } from "@/components/chat/ChatPanel";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useNoteStore } from "@/stores/noteStore";
 import { useTabStore } from "@/stores/tabStore";
 import { useSettingsStore } from "@/stores/settingsStore";
@@ -131,7 +132,11 @@ export function RightSidebar() {
         {activePane === "backlinks" && (
           <LinkList items={backlinks} empty="暂无反向链接" onOpen={handleOpenLink} />
         )}
-        {activePane === "ai" && <ChatPanel />}
+        {activePane === "ai" && (
+          <ErrorBoundary fallback={<div className="p-3 text-sm text-zinc-400">AI 面板加载失败</div>}>
+            <ChatPanel />
+          </ErrorBoundary>
+        )}
       </div>
     </div>
   );
