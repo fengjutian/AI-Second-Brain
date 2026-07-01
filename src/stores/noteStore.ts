@@ -12,7 +12,7 @@ export interface Note {
 }
 
 interface NoteState {
-  notes: Map<string, Note>;        // cache: id → Note
+  notes: Record<string, Note>; // cache: id → Note — Record avoids full-re-render on single-note edits
   currentId: string | null;
   isDirty: boolean;
   loadNote: (id: string, note: Note) => void;
@@ -23,34 +23,34 @@ interface NoteState {
 }
 
 export const useNoteStore = create<NoteState>((set) => ({
-  notes: new Map(),
+  notes: {},
   currentId: null,
   isDirty: false,
 
   loadNote: (id, note) =>
-    set((s) => {
-      const next = new Map(s.notes);
-      next.set(id, note);
-      return { notes: next, currentId: id, isDirty: false };
-    }),
+    set((s) => ({
+      notes: { ...s.notes, [id]: note },
+      currentId: id,
+      isDirty: false,
+    })),
 
   setCurrent: (id) => set({ currentId: id }),
 
   setContent: (id, content) =>
     set((s) => {
-      const note = s.notes.get(id);
-      if (!note) return s;
-      const next = new Map(s.notes);
-      next.set(id, { ...note, content });
-      return { notes: next, isDirty: true };
+      const note = s.notes[id];
+      if (!note) return {};
+      return {
+        notes: { ...s.notes, [id]: { ...note, content } },
+        isDirty: true,
+      };
     }),
 
   setDirty: (d) => set({ isDirty: d }),
 
   removeNote: (id) =>
     set((s) => {
-      const next = new Map(s.notes);
-      next.delete(id);
-      return { notes: next };
+      const { [id]: _, ...rest } = s.notes;
+      return { notes: rest };
     }),
 }));

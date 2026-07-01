@@ -12,6 +12,7 @@ import { api } from "@/lib/api";
 import { isTauri } from "@/lib/env";
 import { InputDialog } from "@/components/ui/InputDialog";
 import { resetWikiLinkCache } from "@/components/editor/WikiLink";
+import { invalidateCalendarCache } from "@/components/sidebar/CalendarPanel";
 
 interface SidebarProps {
   activePane: SidebarPane;
@@ -61,12 +62,14 @@ function FileTreePane() {
         openTab({ noteId: filePath, title: name, path });
         fileTreeRef.current?.refresh();
         resetWikiLinkCache();
+        invalidateCalendarCache();
       } else {
         const note = await api.notes.create({ path: `${name}.md` });
         loadNote(note.id, note);
         openTab({ noteId: note.id, title: note.title, path: note.path });
         fileTreeRef.current?.refresh();
         resetWikiLinkCache();
+        invalidateCalendarCache();
       }
     } catch (e) {
       console.error("Failed to create note:", e);
@@ -103,6 +106,7 @@ function FileTreePane() {
           loadNote(filePath, { id: filePath, path: relPath, title: today, content: `# ${today}\n\n` });
           openTab({ noteId: filePath, title: today, path: relPath });
           resetWikiLinkCache();
+          invalidateCalendarCache();
         }
       } else {
         const note = await api.daily.today();
@@ -110,6 +114,7 @@ function FileTreePane() {
           loadNote(note.id, note);
           openTab({ noteId: note.id, title: note.title, path: note.path });
           resetWikiLinkCache();
+          invalidateCalendarCache();
         }
       }
     } catch (e) {
@@ -173,7 +178,7 @@ function TagsPanel({ onBack }: { onBack: () => void }) {
 
   const tagMap = useMemo(() => {
     const map = new Map<string, string[]>();
-    notes.forEach((note) => {
+    Object.values(notes).forEach((note) => {
       note.tags?.forEach((tag) => {
         if (!map.has(tag)) map.set(tag, []);
         map.get(tag)!.push(note.id);
@@ -222,7 +227,7 @@ function TagsPanel({ onBack }: { onBack: () => void }) {
               </div>
               <div className="space-y-0.5">
                 {noteIds.map((noteId) => {
-                  const note = notes.get(noteId);
+                  const note = notes[noteId];
                   return note ? (
                     <button
                       key={noteId}

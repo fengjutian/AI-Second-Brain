@@ -5,7 +5,7 @@ import { useWhiteboardStore } from "@/stores/whiteboardStore";
 export function StatusBar() {
   const currentId = useNoteStore((s) => s.currentId);
   const activeTab = useTabStore((s) => s.tabs.find((t) => t.id === s.activeTabId));
-  const note = useNoteStore((s) => (currentId ? s.notes.get(currentId) : null));
+  const note = useNoteStore((s) => (currentId ? s.notes[currentId] : null));
   const { savePath, saved } = useWhiteboardStore();
 
   return (

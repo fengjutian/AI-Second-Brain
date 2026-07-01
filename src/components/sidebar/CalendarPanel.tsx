@@ -14,6 +14,18 @@ interface NoteEntry {
   created: string;
 }
 
+// Cache scan results per vault to avoid rescanning on every pane switch
+const scanCache = new Map<string, NoteEntry[]>();
+
+/** Invalidate the calendar scan cache (called after note creation/deletion). */
+export function invalidateCalendarCache(vaultPath?: string) {
+  if (vaultPath) {
+    scanCache.delete(vaultPath);
+  } else {
+    scanCache.clear();
+  }
+}
+
 /** Group notes by date string (YYYY-MM-DD). */
 function groupByDate(notes: NoteEntry[]): Map<string, NoteEntry[]> {
   const map = new Map<string, NoteEntry[]>();
@@ -41,12 +53,21 @@ export function CalendarPanel() {
     if (!vaultPath) return;
 
     const fetchNotes = async () => {
+      // Use cached result if available for this vault
+      if (scanCache.has(vaultPath)) {
+        setNotes(scanCache.get(vaultPath)!);
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       try {
+        let results: NoteEntry[];
+
         if (isTauri()) {
           // Tauri: scan directory + parse frontmatter for dates
           const { readDir, readTextFile } = await import("@tauri-apps/plugin-fs");
-          const results: NoteEntry[] = [];
+          results = [];
 
           const scan = async (dirPath: string, basePath: string) => {
             const entries = await readDir(dirPath);
@@ -62,7 +83,6 @@ export function CalendarPanel() {
                 let created = "";
                 let title = entry.name.replace(/\.md$/, "");
 
-                // Parse YAML frontmatter
                 if (normalized.startsWith("---\n")) {
                   const end = normalized.indexOf("\n---\n", 4);
                   if (end !== -1) {
@@ -85,19 +105,18 @@ export function CalendarPanel() {
           };
 
           await scan(vaultPath, vaultPath);
-          setNotes(results);
         } else {
-          // Browser: use HTTP API (list_notes returns created dates)
           const data = await api.notes.list();
-          setNotes(
-            data.map((n: any) => ({
-              id: n.id,
-              title: n.title,
-              path: n.path,
-              created: n.created,
-            }))
-          );
+          results = data.map((n: any) => ({
+            id: n.id,
+            title: n.title,
+            path: n.path,
+            created: n.created,
+          }));
         }
+
+        scanCache.set(vaultPath, results);
+        setNotes(results);
       } catch (e) {
         console.error("Failed to load notes for calendar:", e);
       } finally {

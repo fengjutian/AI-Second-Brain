@@ -8,6 +8,7 @@ import { useSettingsStore } from "@/stores/settingsStore";
 import { cn } from "@/lib/utils";
 import { InputDialog } from "@/components/ui/InputDialog";
 import { resetWikiLinkCache } from "@/components/editor/WikiLink";
+import { invalidateCalendarCache } from "@/components/sidebar/CalendarPanel";
 
 interface TreeNode {
   name: string;
@@ -211,11 +212,13 @@ export const FileTree = forwardRef<{ refresh: () => void }>(function FileTree(_p
       loadNote(filePath, { id: filePath, path, title, content });
       openTab({ noteId: filePath, title, path });
       resetWikiLinkCache();
+      invalidateCalendarCache();
     } else {
       const note = await api.notes.create({ path });
       setNotes((prev) => [...prev, { id: note.id, path: note.path, title: note.title }]);
       loadNote(note.id, note);
       resetWikiLinkCache();
+      invalidateCalendarCache();
       openTab({ noteId: note.id, title: note.title, path: note.path });
     }
   };
@@ -227,6 +230,7 @@ export const FileTree = forwardRef<{ refresh: () => void }>(function FileTree(_p
         // Try API first (it handles .trash properly)
         await api.notes.delete(noteId);
         setNotes((prev) => prev.filter((n) => n.id !== noteId));
+        invalidateCalendarCache();
       } catch {
         // Fallback: direct delete via Tauri FS
         try {
@@ -241,6 +245,7 @@ export const FileTree = forwardRef<{ refresh: () => void }>(function FileTree(_p
       try {
         await api.notes.delete(noteId);
         setNotes((prev) => prev.filter((n) => n.id !== noteId));
+        invalidateCalendarCache();
       } catch (e) {
         console.error("Failed to delete note:", e);
       }

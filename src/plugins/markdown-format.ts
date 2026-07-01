@@ -1,5 +1,27 @@
-/** Markdown Format Plugin — keyboard shortcuts for formatting. */
+/** Markdown Format Plugin — keyboard shortcuts for formatting.
+ *
+ * NOTE: bold/italic are handled natively by TipTap StarterKit (Ctrl+B, Ctrl+I).
+ * Block formatting (heading/list/quote) is available via the BubbleMenu and BlockHandle.
+ * This plugin registers CommandPalette entries for these actions, dispatching via
+ * the editor:format custom event so the active Editor can apply them with TipTap's API.
+ */
 import type { Plugin, PluginContext } from "@/lib/plugin-api";
+
+type FormatAction =
+  | "toggleBold"
+  | "toggleItalic"
+  | "toggleH1"
+  | "toggleH2"
+  | "toggleH3"
+  | "toggleBulletList"
+  | "toggleOrderedList"
+  | "toggleBlockquote";
+
+function dispatchFormat(action: FormatAction) {
+  window.dispatchEvent(
+    new CustomEvent("editor:format", { detail: { action } })
+  );
+}
 
 export const MarkdownFormatPlugin: Plugin = {
   manifest: {
@@ -13,68 +35,22 @@ export const MarkdownFormatPlugin: Plugin = {
 
   activate(context: PluginContext) {
     const formatCommands = [
-      {
-        id: "bold",
-        name: "加粗选中文本",
-        hotkey: "Ctrl+B",
-        callback: () => {
-          document.execCommand("bold");
-        },
-      },
-      {
-        id: "italic",
-        name: "斜体选中文本",
-        hotkey: "Ctrl+I",
-        callback: () => {
-          document.execCommand("italic");
-        },
-      },
-      {
-        id: "heading-1",
-        name: "设为一级标题",
-        callback: () => {
-          wrapSelectedLine("# ");
-        },
-      },
-      {
-        id: "heading-2",
-        name: "设为二级标题",
-        callback: () => {
-          wrapSelectedLine("## ");
-        },
-      },
-      {
-        id: "heading-3",
-        name: "设为三级标题",
-        callback: () => {
-          wrapSelectedLine("### ");
-        },
-      },
-      {
-        id: "bullet-list",
-        name: "切换无序列表",
-        callback: () => {
-          wrapSelectedLine("- ");
-        },
-      },
-      {
-        id: "numbered-list",
-        name: "切换有序列表",
-        callback: () => {
-          wrapSelectedLine("1. ");
-        },
-      },
-      {
-        id: "blockquote",
-        name: "切换引用块",
-        callback: () => {
-          wrapSelectedLine("> ");
-        },
-      },
+      { id: "bold", name: "加粗选中文本", action: "toggleBold" as const },
+      { id: "italic", name: "斜体选中文本", action: "toggleItalic" as const },
+      { id: "heading-1", name: "设为一级标题", action: "toggleH1" as const },
+      { id: "heading-2", name: "设为二级标题", action: "toggleH2" as const },
+      { id: "heading-3", name: "设为三级标题", action: "toggleH3" as const },
+      { id: "bullet-list", name: "切换无序列表", action: "toggleBulletList" as const },
+      { id: "numbered-list", name: "切换有序列表", action: "toggleOrderedList" as const },
+      { id: "blockquote", name: "切换引用块", action: "toggleBlockquote" as const },
     ];
 
     for (const cmd of formatCommands) {
-      context.addCommand(cmd);
+      context.addCommand({
+        id: cmd.id,
+        name: cmd.name,
+        callback: () => dispatchFormat(cmd.action),
+      });
     }
   },
 
@@ -82,32 +58,3 @@ export const MarkdownFormatPlugin: Plugin = {
     // Clean up
   },
 };
-
-function wrapSelectedLine(prefix: string) {
-  const selection = window.getSelection();
-  if (!selection || !selection.rangeCount) return;
-
-  const range = selection.getRangeAt(0);
-  const startNode = range.startContainer;
-
-  if (startNode.nodeType === Node.TEXT_NODE && startNode.parentElement?.closest(".tiptap")) {
-    // Toggle prefix
-    const text = startNode.textContent || "";
-    const offset = range.startOffset;
-
-    // Find start of line
-    let lineStart = offset;
-    while (lineStart > 0 && text[lineStart - 1] !== "\n") lineStart--;
-
-    const line = text.slice(lineStart, offset + (range.endOffset - range.startOffset));
-    if (line.startsWith(prefix)) {
-      // Remove prefix
-      const newText = text.slice(0, lineStart) + line.slice(prefix.length) + text.slice(lineStart + line.length);
-      (startNode as Text).textContent = newText;
-    } else {
-      // Add prefix
-      const newText = text.slice(0, lineStart) + prefix + line + text.slice(lineStart + line.length);
-      (startNode as Text).textContent = newText;
-    }
-  }
-}

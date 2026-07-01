@@ -66,21 +66,29 @@ export function ChatPanel() {
       if (!reader) throw new Error("No stream");
 
       const decoder = new TextDecoder();
+      let buffer = ""; // accumulate partial chunks for proper SSE frame parsing
       let full = "";
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        const chunk = decoder.decode(value, { stream: true });
-        // Parse SSE: "data: ...\n\n"
-        const lines = chunk.split("\n");
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            const data = line.slice(6);
-            if (data === "[DONE]") continue;
-            full += data;
-            setStreaming(full);
+        buffer += decoder.decode(value, { stream: true });
+
+        // SSE frames are delimited by double newlines
+        const parts = buffer.split("\n\n");
+        // The last part may be incomplete — keep it in the buffer
+        buffer = parts.pop() || "";
+
+        for (const frame of parts) {
+          const lines = frame.split("\n");
+          for (const line of lines) {
+            if (line.startsWith("data: ")) {
+              const data = line.slice(6);
+              if (data === "[DONE]") continue;
+              full += data;
+              setStreaming(full);
+            }
           }
         }
       }
@@ -89,9 +97,12 @@ export function ChatPanel() {
         setMessages((prev) => [...prev, { role: "assistant", content: full }]);
       }
     } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        return; // user cancelled — not an error
+      }
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: `AI 服务不可用：${err}` },
+        { role: "assistant", content: "AI 服务暂时不可用，请检查后端是否运行。" },
       ]);
     } finally {
       setLoading(false);

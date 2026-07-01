@@ -98,7 +98,7 @@ export function CommandPalette({ onClose }: CommandPaletteProps) {
       action: async () => {
         const { useNoteStore } = await import("@/stores/noteStore");
         const currentId = useNoteStore.getState().currentId;
-        const note = currentId ? useNoteStore.getState().notes.get(currentId) : null;
+        const note = currentId ? (useNoteStore.getState().notes[currentId] ?? null) : null;
         if (!note) return;
         if (!confirm(`确定删除「${note.title}」？\n\n笔记会被移到 .trash 目录。`)) return;
         try {

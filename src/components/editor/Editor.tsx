@@ -32,7 +32,7 @@ interface EditorProps {
 }
 
 export function Editor({ tabId, noteId }: EditorProps) {
-  const note = useNoteStore((s) => s.notes.get(noteId));
+  const note = useNoteStore((s) => s.notes[noteId]);
   const setContent = useNoteStore((s) => s.setContent);
   const setDirty = useTabStore((s) => s.setDirty);
   const updateTitle = useTabStore((s) => s.updateTitle);
@@ -164,6 +164,26 @@ export function Editor({ tabId, noteId }: EditorProps) {
       }
     };
   }, []);
+
+  // Listen for editor:format events from the markdown-format plugin
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { action } = (e as CustomEvent).detail;
+      if (!editor) return;
+      switch (action) {
+        case "toggleBold":        editor.chain().focus().toggleBold().run(); break;
+        case "toggleItalic":      editor.chain().focus().toggleItalic().run(); break;
+        case "toggleH1":          editor.chain().focus().toggleHeading({ level: 1 }).run(); break;
+        case "toggleH2":          editor.chain().focus().toggleHeading({ level: 2 }).run(); break;
+        case "toggleH3":          editor.chain().focus().toggleHeading({ level: 3 }).run(); break;
+        case "toggleBulletList":  editor.chain().focus().toggleBulletList().run(); break;
+        case "toggleOrderedList": editor.chain().focus().toggleOrderedList().run(); break;
+        case "toggleBlockquote":  editor.chain().focus().toggleBlockquote().run(); break;
+      }
+    };
+    window.addEventListener("editor:format", handler);
+    return () => window.removeEventListener("editor:format", handler);
+  }, [editor]);
 
   const handleTitleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {

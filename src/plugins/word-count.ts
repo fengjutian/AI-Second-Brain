@@ -33,14 +33,14 @@ export const WordCountPlugin: Plugin = {
         return;
       }
 
-      const note = state.notes.get(currentId);
+      const note = state.notes[currentId];
       if (!note) {
         el.textContent = "0 词 | 0 字";
         return;
       }
 
       // Only update if content or current note changed
-      const prevNote = prev.notes.get(prev.currentId || "");
+      const prevNote = prev.notes[prev.currentId || ""];
       if (
         currentId !== prev.currentId ||
         (prevNote && note.content !== prevNote.content)
