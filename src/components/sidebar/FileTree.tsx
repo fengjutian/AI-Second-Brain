@@ -1,8 +1,10 @@
 import { useEffect, useState, useMemo, memo, useCallback, useRef } from "react";
 import { FaFile, FaFolder, FaFolderOpen, FaChevronRight, FaChevronDown, FaTrashCan } from "react-icons/fa6";
 import { api } from "@/lib/api";
+import { isTauri } from "@/lib/env";
 import { useTabStore } from "@/stores/tabStore";
 import { useNoteStore } from "@/stores/noteStore";
+import { useSettingsStore } from "@/stores/settingsStore";
 import { cn } from "@/lib/utils";
 import { InputDialog } from "@/components/ui/InputDialog";
 
@@ -48,15 +50,54 @@ function buildTree(notes: { path: string; title: string; id: string }[]): TreeNo
   return root.children;
 }
 
+/** Recursively scan vault directory for .md files using Tauri FS plugin */
+async function scanDirectory(dirPath: string): Promise<{ id: string; path: string; title: string }[]> {
+  const { readDir } = await import("@tauri-apps/plugin-fs");
+  const entries = await readDir(dirPath);
+  const results: { id: string; path: string; title: string }[] = [];
+
+  for (const entry of entries) {
+    // Skip hidden files/dirs and .trash
+    if (entry.name.startsWith(".") || entry.name === ".trash") continue;
+
+    const fullPath = `${dirPath}/${entry.name}`;
+
+    if (entry.isDirectory) {
+      const children = await scanDirectory(fullPath);
+      results.push(...children);
+    } else if (entry.name.endsWith(".md")) {
+      // Derive title from filename (strip .md), use path as id for direct-fs mode
+      const title = entry.name.replace(/\.md$/, "");
+      results.push({ id: fullPath, path: entry.name, title });
+    }
+  }
+  return results;
+}
+
 export function FileTree() {
   const [notes, setNotes] = useState<{ id: string; path: string; title: string }[]>([]);
   const [newNoteOpen, setNewNoteOpen] = useState(false);
   const openTab = useTabStore((s) => s.openTab);
   const loadNote = useNoteStore((s) => s.loadNote);
+  const vaultPath = useSettingsStore((s) => s.vaultPath);
 
   useEffect(() => {
-    api.notes.list().then(setNotes).catch(() => {});
-  }, []);
+    if (isTauri()) {
+      // Tauri: scan vault directory directly via Tauri FS plugin
+      const load = async () => {
+        try {
+          const files = await scanDirectory(vaultPath);
+          setNotes(files);
+        } catch (e) {
+          console.error("Failed to scan vault via Tauri FS:", e);
+        }
+      };
+      load();
+    } else {
+      // Browser: use HTTP API
+      api.notes.list().then(setNotes).catch(() => {});
+    }
+  }, [vaultPath]);
 
   // Real-time updates via WebSocket from backend file watcher
   const refreshRef = useRef<() => void>(() => {});

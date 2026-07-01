@@ -42,14 +42,16 @@ export function MainLayout() {
       {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
         <ActivityBar activePane={activePane} onPaneChange={setActivePane} />
-        {activePane !== "graph" && <Sidebar activePane={activePane} />}
+        <div className={activePane === "graph" ? "hidden" : ""}>
+          <Sidebar activePane={activePane} />
+        </div>
         {activePane === "graph" ? (
-          <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-zinc-950">
+          <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-zinc-950 animate-slide-in-right">
             <GraphPanel />
           </div>
         ) : (
           <>
-            <div className="flex-1 flex flex-col min-w-0">
+            <div className="flex-1 flex flex-col min-w-0 animate-fade-in">
               <TabManager />
             </div>
             <RightSidebar />

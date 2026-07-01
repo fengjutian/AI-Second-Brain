@@ -73,7 +73,7 @@ export function RightSidebar() {
   }
 
   return (
-    <div className="w-60 bg-zinc-50 dark:bg-zinc-900 border-l border-zinc-200 dark:border-zinc-700 flex flex-col shrink-0">
+    <div className="w-60 bg-zinc-50 dark:bg-zinc-900 border-l border-zinc-200 dark:border-zinc-700 flex flex-col shrink-0 animate-fade-in">
       <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-200 dark:border-zinc-700">
         <div className="flex gap-1">
           {paneTabs.map(({ id, label, icon: Icon }) => (

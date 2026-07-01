@@ -24,6 +24,7 @@ log = "0.4"
 tauri = { version = "2.11.3", features = [] }
 tauri-plugin-log = "2"
 tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
 
 # Pin time to avoid incompatibility with cookie 0.18
 # cookie 0.18 uses old parse() signature changed in time >= 0.3.37
