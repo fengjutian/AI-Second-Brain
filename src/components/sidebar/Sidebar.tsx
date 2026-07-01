@@ -2,6 +2,7 @@ import { useState, useRef, useMemo } from "react";
 import { FaPlus, FaCalendar, FaTags, FaArrowLeft } from "react-icons/fa6";
 import { FileTree } from "@/components/sidebar/FileTree";
 import { SearchPanel } from "@/components/search/SearchPanel";
+import { CalendarPanel } from "@/components/sidebar/CalendarPanel";
 import type { SidebarPane } from "@/components/sidebar/ActivityBar";
 import { useNoteStore } from "@/stores/noteStore";
 import { useTabStore } from "@/stores/tabStore";
@@ -23,6 +24,9 @@ export function Sidebar({ activePane }: SidebarProps) {
         </div>
         <div className={activePane === "search" ? "animate-fade-in" : "hidden"}>
           <SearchPane />
+        </div>
+        <div className={activePane === "calendar" ? "animate-fade-in" : "hidden"}>
+          <CalendarPanel />
         </div>
       </div>
     </div>

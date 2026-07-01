@@ -5,9 +5,10 @@ import { RightSidebar } from "@/components/sidebar/RightSidebar";
 import { GraphPanel } from "@/components/sidebar/GraphPanel";
 import { CommandPalette } from "@/components/CommandPalette";
 import { StatusBar } from "@/components/StatusBar";
+import { WhiteboardPanel } from "@/components/sidebar/WhiteboardPanel";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { api } from "@/lib/api";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { FaChevronDown, FaFolderOpen, FaPlus, FaCheck, FaTrashCan } from "react-icons/fa6";
 import { cn } from "@/lib/utils";
@@ -42,13 +43,15 @@ export function MainLayout() {
       {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
         <ActivityBar activePane={activePane} onPaneChange={setActivePane} />
-        <div className={activePane === "graph" ? "hidden" : "contents"}>
+        {activePane !== "graph" && activePane !== "whiteboard" && (
           <Sidebar activePane={activePane} />
-        </div>
+        )}
         {activePane === "graph" ? (
           <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-zinc-950 animate-slide-in-right">
             <GraphPanel />
           </div>
+        ) : activePane === "whiteboard" ? (
+          <WhiteboardPanel />
         ) : (
           <>
             <div className="flex-1 flex flex-col min-w-0 animate-fade-in">

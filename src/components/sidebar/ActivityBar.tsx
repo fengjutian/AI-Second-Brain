@@ -1,8 +1,8 @@
-import { FaFolder, FaMagnifyingGlass, FaCodeBranch, FaChalkboard, FaGear } from "react-icons/fa6";
+import { FaFolder, FaMagnifyingGlass, FaCodeBranch, FaChalkboard, FaGear, FaCalendar } from "react-icons/fa6";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 
-export type SidebarPane = "files" | "search" | "graph";
+export type SidebarPane = "files" | "search" | "graph" | "whiteboard" | "calendar";
 
 interface ActivityBarProps {
   activePane: SidebarPane;
@@ -13,6 +13,8 @@ const topActions: { id: SidebarPane; icon: typeof FaFolder; label: string }[] = 
   { id: "files", icon: FaFolder, label: "文件" },
   { id: "search", icon: FaMagnifyingGlass, label: "搜索" },
   { id: "graph", icon: FaCodeBranch, label: "图谱" },
+  { id: "calendar", icon: FaCalendar, label: "日历" },
+  { id: "whiteboard", icon: FaChalkboard, label: "白板" },
 ];
 
 export function ActivityBar({ activePane, onPaneChange }: ActivityBarProps) {
@@ -42,19 +44,6 @@ export function ActivityBar({ activePane, onPaneChange }: ActivityBarProps) {
           </span>
         </button>
       ))}
-
-      {/* Whiteboard — navigates to full-page board */}
-      <div className="w-6 h-px bg-zinc-300 dark:bg-zinc-600 my-1" />
-      <button
-        onClick={() => navigate("/whiteboard")}
-        className="w-10 h-10 flex items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors relative group"
-        title="白板"
-      >
-        <FaChalkboard size={20} />
-        <span className="absolute left-full ml-2 px-2 py-1 text-xs bg-zinc-800 dark:bg-zinc-100 text-white dark:text-zinc-800 rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">
-          白板
-        </span>
-      </button>
 
       <div className="flex-1" />
       <button

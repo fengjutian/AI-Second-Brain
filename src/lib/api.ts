@@ -59,6 +59,14 @@ export const api = {
     global: () => request<any>("/graph"),
     local: (id: string, depth = 1) => request<any>(`/graph/${id}/local?depth=${depth}`),
   },
+  calendar: {
+    list: (year?: number, month?: number) => {
+      const params = new URLSearchParams();
+      if (year !== undefined) params.set("year", String(year));
+      if (month !== undefined) params.set("month", String(month));
+      return request<any>(`/calendar?${params.toString()}`);
+    },
+  },
   vaults: {
     get: () => request<any>("/vaults"),
     open: (path: string) =>
