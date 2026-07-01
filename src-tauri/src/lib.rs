@@ -1,10 +1,11 @@
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 use std::io::{BufRead, BufReader, Write};
 use std::sync::Mutex;
-use portable_pty::{native_pty_system, PtySize, CommandBuilder};
-use tauri::{command, AppHandle, Emitter, Manager, State};
+use portable_pty::{native_pty_system, PtySize, CommandBuilder, MasterPty};
+use tauri::{command, AppHandle, Emitter, State};
 
 struct PtyState {
+    master: Mutex<Option<Box<dyn MasterPty + Send>>>,
     writer: Mutex<Option<Box<dyn Write + Send>>>,
 }
 
@@ -22,30 +23,26 @@ fn spawn_terminal(app: AppHandle, state: State<'_, PtyState>, cwd: String, rows:
     let mut cmd = CommandBuilder::new(shell);
     cmd.cwd(cwd);
     #[cfg(target_os = "windows")]
-    cmd.arg("/K"); // keep cmd open after commands
+    cmd.arg("/K");
 
     let mut child = pty_pair.slave.spawn_command(cmd).map_err(|e| e.to_string())?;
     let mut reader = BufReader::new(pty_pair.master.try_clone_reader().map_err(|e| e.to_string())?);
     let writer = pty_pair.master.take_writer().map_err(|e| e.to_string())?;
 
-    // Store writer for later input
     *state.writer.lock().unwrap() = Some(Box::new(writer));
+    *state.master.lock().unwrap() = Some(Box::new(pty_pair.master));
 
-    // Read PTY output in a separate thread
     let app_handle = app.clone();
     std::thread::spawn(move || {
         let mut line = String::new();
         loop {
             line.clear();
             match reader.read_line(&mut line) {
-                Ok(0) => break, // EOF
-                Ok(_) => {
-                    let _ = app_handle.emit("pty-output", &line);
-                }
+                Ok(0) => break,
+                Ok(_) => { let _ = app_handle.emit("pty-output", &line); }
                 Err(_) => break,
             }
         }
-        // Wait for child to exit
         let _ = child.wait();
         let _ = app_handle.emit("pty-exit", ());
     });
@@ -64,9 +61,8 @@ fn send_to_terminal(state: State<'_, PtyState>, data: String) -> Result<(), Stri
 
 #[command]
 fn resize_pty(state: State<'_, PtyState>, rows: u16, cols: u16) -> Result<(), String> {
-    if let Some(writer) = state.writer.lock().unwrap().as_ref() {
-        // portable-pty resize via writer
-        writer.resize(PtySize { rows, cols, pixel_width: 0, pixel_height: 0 })
+    if let Some(master) = state.master.lock().unwrap().as_mut() {
+        master.resize(PtySize { rows, cols, pixel_width: 0, pixel_height: 0 })
             .map_err(|e| e.to_string())?;
     }
     Ok(())
@@ -77,7 +73,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_sql::Builder::default().build())
-        .manage(PtyState { writer: Mutex::new(None) })
+        .manage(PtyState { master: Mutex::new(None), writer: Mutex::new(None) })
         .invoke_handler(tauri::generate_handler![spawn_terminal, send_to_terminal, resize_pty])
         .setup(|app| {
             if cfg!(debug_assertions) {
