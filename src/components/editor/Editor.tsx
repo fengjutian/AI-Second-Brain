@@ -1,4 +1,5 @@
-import { useEditor, EditorContent, BubbleMenu } from "@tiptap/react";
+import { useEditor, EditorContent } from "@tiptap/react";
+import { BubbleMenu } from "@tiptap/react/menus";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Mention from "@tiptap/extension-mention";
@@ -36,6 +37,7 @@ export function Editor({ tabId, noteId }: EditorProps) {
   const setDirty = useTabStore((s) => s.setDirty);
   const updateTitle = useTabStore((s) => s.updateTitle);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const pendingSaveRef = useRef<(() => Promise<void>) | null>(null);
   const noteIdRef = useRef(noteId);
   const tabIdRef = useRef(tabId);
   noteIdRef.current = noteId;
@@ -93,7 +95,7 @@ export function Editor({ tabId, noteId }: EditorProps) {
       setDirty(tid, true);
 
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = setTimeout(async () => {
+      pendingSaveRef.current = async () => {
         try {
           if (isTauri()) {
             // Tauri: write directly to .md file, preserving frontmatter
@@ -115,7 +117,11 @@ export function Editor({ tabId, noteId }: EditorProps) {
           }
           setDirty(tid, false);
         } catch {}
-        }, 1000);
+      };
+      saveTimerRef.current = setTimeout(() => {
+        pendingSaveRef.current?.();
+        pendingSaveRef.current = null;
+      }, 1000);
       },
     });
 
@@ -130,7 +136,11 @@ export function Editor({ tabId, noteId }: EditorProps) {
 
   useEffect(() => {
     return () => {
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+        pendingSaveRef.current?.();
+        pendingSaveRef.current = null;
+      }
     };
   }, []);
 
