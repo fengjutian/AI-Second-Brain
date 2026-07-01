@@ -46,20 +46,22 @@ export function MainLayout() {
         {activePane !== "graph" && activePane !== "whiteboard" && (
           <Sidebar activePane={activePane} />
         )}
-        {activePane === "graph" ? (
+        <div className={activePane === "graph" ? "" : "hidden"}>
           <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-zinc-950 animate-slide-in-right">
             <GraphPanel />
           </div>
-        ) : activePane === "whiteboard" ? (
+        </div>
+        <div className={activePane === "whiteboard" ? "flex-1 flex flex-col min-w-0" : "hidden"}>
           <WhiteboardPanel />
-        ) : (
+        </div>
+        {activePane !== "graph" && activePane !== "whiteboard" ? (
           <>
             <div className="flex-1 flex flex-col min-w-0 animate-fade-in">
               <TabManager />
             </div>
             <RightSidebar />
           </>
-        )}
+        ) : null}
       </div>
 
       <StatusBar />

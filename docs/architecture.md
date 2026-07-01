@@ -768,10 +768,11 @@ if (isTauri()) {
 
 | Component | Local-First? | Method |
 |-----------|-------------|--------|
-| `FileTree.tsx` | ✅ Partial | list: readDir, open: readTextFile, delete: remove (fallback) |
-| `FileTree.tsx` (create) | ❌ Missing | Needs writeTextFile + frontmatter generation |
-| `Editor.tsx` (save) | ❌ Missing | Needs writeTextFile for direct .md overwrite |
-| `CommandPalette.tsx` (daily) | ❌ Missing | Needs date-based path construction + exists check |
-| `RightSidebar.tsx` (links) | ❌ Missing | Needs frontend [[link]] parser |
-| `SearchPanel.tsx` | ❌ Missing | Needs frontend regex search or FTS5 via Tauri command |
-| `GraphPanel.tsx` | ❌ Missing | Acceptable: show "backend required" message |
+| `FileTree.tsx` | ✅ Yes | list: readDir, open: readTextFile, create: writeTextFile, delete: remove |
+| `Editor.tsx` (save) | ✅ Yes | writeTextFile with frontmatter preservation |
+| `Sidebar.tsx` (daily) | ✅ Yes | exists check + mkdir + writeTextFile template |
+| `CommandPalette.tsx` (daily) | ✅ Yes | Same as Sidebar daily |
+| `SearchPanel.tsx` | ✅ Yes | SQLite FTS5 via @tauri-apps/plugin-sql |
+| `RightSidebar.tsx` (links) | ✅ Yes | SQLite FTS5 link extraction |
+| `WhiteboardPanel.tsx` | ✅ Yes | Excalidraw (pure client-side Canvas) |
+| `GraphPanel.tsx` | ❌ No | Shows "backend required" message |

@@ -181,3 +181,9 @@
 .animate-slide-up {
   animation: slide-up 0.15s ease-out;
 }
+
+/* ── Excalidraw — isolate from Tailwind base ── */
+.excalidraw-wrapper {
+  --color-primary: #6965db;
+  --color-primary-dark: #5b57d1;
+}

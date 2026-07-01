@@ -46,7 +46,7 @@
 | O4 | 笔记别名 | P2 | 为笔记设置别名用于链接 |
 | O5 | 模板 | P2 | 新建笔记时可选择模板 |
 | O6 | 日记 (Daily Note) | P1 | 一键创建/打开当天日记 |
-| O7 | Canvas / 白板 | P3 | 无限画布自由排布笔记卡片 |
+| O7 | Canvas / 白板 | P1 | Excalidraw 手绘风格无限画布，内联显示 |
 
 ### 2.4 搜索
 
@@ -178,6 +178,7 @@
 | 前端 UI | **React** + TypeScript | 生态成熟，组件丰富 |
 | 编辑器内核 | **TipTap** | 基于 ProseMirror，WYSIWYG 友好，插件生态丰富 |
 | 图谱渲染 | **Cytoscape.js** | 图论级渲染，支持布局算法和交互 |
+| 白板 | **Excalidraw** | 手绘风格无限画布，纯前端 Canvas |
 | 后端 | **FastAPI** (Python) | AI/RAG 生态无缝对接 |
 | AI 嵌入 | sentence-transformers / OpenAI | 支持本地 + 云端 |
 | AI 对话 | **LlamaIndex** | RAG 框架，文档解析 + 索引 + 检索一体化 |
@@ -262,7 +263,7 @@
 | 🤖 AI 聊天 | 两种 | ❌ **未降级** | 低风险 | 显示"AI 服务不可用" |
 | 🧠 AI 配置 | 两种 | ❌ **未降级** | 低风险 | 设置页永久加载中 |
 | 📥 导入 Obsidian | 两种 | ❌ **未降级** | 低风险 | 偶尔使用 |
-| 🎨 白板 (tldraw/Excalidraw) | 两种 | ✅ 零依赖 | ✅ 完美 | 纯前端，无后端需求 |
+| 🎨 白板 (Excalidraw) | 两种 | ✅ 零依赖 | ✅ 完美 | 纯前端 Canvas，无后端需求 |
 | 🌓 主题切换 | 两种 | ✅ 零依赖 | ✅ 完美 | localStorage |
 | 🔌 核心插件 | 两种 | ✅ 零依赖 | ✅ 完美 | 纯前端注册 |
 
