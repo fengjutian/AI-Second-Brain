@@ -4,7 +4,10 @@ import { cn } from "@/lib/utils";
 import { ChatPanel } from "@/components/chat/ChatPanel";
 import { useNoteStore } from "@/stores/noteStore";
 import { useTabStore } from "@/stores/tabStore";
+import { useSettingsStore } from "@/stores/settingsStore";
 import { api } from "@/lib/api";
+import { isTauri } from "@/lib/env";
+import { outgoingLinks, backlinks as getBacklinks, rebuildIndex } from "@/lib/localIndex";
 
 type Pane = "outgoing" | "backlinks" | "tags" | "ai";
 
@@ -41,12 +44,32 @@ export function RightSidebar() {
       return;
     }
     let cancelled = false;
-    api.notes.outgoingLinks(currentId).then((data) => {
-      if (!cancelled) setOutgoing(data);
-    }).catch(() => {});
-    api.notes.backlinks(currentId).then((data) => {
-      if (!cancelled) setBacklinks(data);
-    }).catch(() => {});
+
+    if (isTauri()) {
+      const vaultPath = useSettingsStore.getState().vaultPath;
+      rebuildIndex(vaultPath).then(() => {
+        if (cancelled) return;
+        outgoingLinks(vaultPath, currentId).then((data) => {
+          if (!cancelled) setOutgoing(data.map((l: any, i: number) => ({
+            id: i, target_id: l.target_id, target_text: l.target_text,
+            target_title: l.target_text, target_path: null, anchor: null,
+          })));
+        }).catch(() => {});
+        getBacklinks(vaultPath, currentId).then((data) => {
+          if (!cancelled) setBacklinks(data.map((l: any, i: number) => ({
+            id: i, target_id: l.source_id, target_text: l.target_text,
+            target_title: l.target_text, target_path: null, anchor: null,
+          })));
+        }).catch(() => {});
+      }).catch(() => {});
+    } else {
+      api.notes.outgoingLinks(currentId).then((data) => {
+        if (!cancelled) setOutgoing(data);
+      }).catch(() => {});
+      api.notes.backlinks(currentId).then((data) => {
+        if (!cancelled) setBacklinks(data);
+      }).catch(() => {});
+    }
     return () => { cancelled = true; };
   }, [currentId]);
 

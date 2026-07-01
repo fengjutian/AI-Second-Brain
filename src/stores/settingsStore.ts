@@ -24,12 +24,14 @@ interface SettingsState {
   recentVaults: RecentVault[];
   aiConfig: AiConfig | null;
   aiConfigLoading: boolean;
+  offlineMode: boolean;
   setTheme: (t: Theme) => void;
   openVault: (path: string, name: string) => void;
   setRecentVaults: (v: RecentVault[]) => void;
   removeRecentVault: (path: string) => void;
   setAiConfig: (c: AiConfig) => void;
   setAiConfigLoading: (v: boolean) => void;
+  setOfflineMode: (v: boolean) => void;
 }
 
 export const useSettingsStore = create<SettingsState>((set) => ({
@@ -39,6 +41,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   recentVaults: [],
   aiConfig: null,
   aiConfigLoading: false,
+  offlineMode: localStorage.getItem("offlineMode") === "true",
   setTheme: (theme) => {
     localStorage.setItem("theme", theme);
     set({ theme });
@@ -51,4 +54,8 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     })),
   setAiConfig: (aiConfig) => set({ aiConfig }),
   setAiConfigLoading: (aiConfigLoading) => set({ aiConfigLoading }),
+  setOfflineMode: (offlineMode) => {
+    localStorage.setItem("offlineMode", String(offlineMode));
+    set({ offlineMode });
+  },
 }));

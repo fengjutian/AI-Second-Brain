@@ -94,6 +94,8 @@ function GeneralSection() {
   const setRecentVaults = useSettingsStore((s) => s.setRecentVaults);
   const removeRecentVault = useSettingsStore((s) => s.removeRecentVault);
   const openVault = useSettingsStore((s) => s.openVault);
+  const offlineMode = useSettingsStore((s) => s.offlineMode);
+  const setOfflineMode = useSettingsStore((s) => s.setOfflineMode);
   const [opening, setOpening] = useState(false);
 
   // Load recent vaults
@@ -227,6 +229,33 @@ function GeneralSection() {
           </div>
         </section>
       )}
+
+      {/* Offline Mode */}
+      <section>
+        <h3 className="text-sm font-medium mb-3">网络</h3>
+        <div className="flex items-center justify-between p-3 rounded-lg border border-zinc-200 dark:border-zinc-700">
+          <div>
+            <p className="text-sm font-medium">离线模式</p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+              阻止所有网络请求，仅使用本地文件
+            </p>
+          </div>
+          <button
+            onClick={() => setOfflineMode(!offlineMode)}
+            className={cn(
+              "relative w-10 h-5 rounded-full transition-colors",
+              offlineMode ? "bg-amber-500" : "bg-zinc-300 dark:bg-zinc-600"
+            )}
+          >
+            <span
+              className={cn(
+                "absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform",
+                offlineMode ? "translate-x-5" : "translate-x-0.5"
+              )}
+            />
+          </button>
+        </div>
+      </section>
 
       {/* About */}
       <section>

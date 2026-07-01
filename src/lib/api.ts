@@ -1,4 +1,13 @@
+import { useSettingsStore } from "@/stores/settingsStore";
+
 const BASE = "/api/v1";
+
+export class OfflineError extends Error {
+  constructor() {
+    super("应用处于离线模式");
+    this.name = "OfflineError";
+  }
+}
 
 class ApiError extends Error {
   status: number;
@@ -9,6 +18,9 @@ class ApiError extends Error {
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  if (useSettingsStore.getState().offlineMode) {
+    throw new OfflineError();
+  }
   const res = await fetch(`${BASE}${path}`, {
     headers: { "Content-Type": "application/json" },
     ...options,

@@ -113,10 +113,12 @@ export const FileTree = forwardRef<{ refresh: () => void }>(function FileTree(_p
 
   useEffect(() => {
     if (isTauri()) return; // No WebSocket in Tauri mode
+
     let ws: WebSocket | null = null;
     let reconnectTimer: ReturnType<typeof setTimeout>;
 
     const connect = () => {
+      if (useSettingsStore.getState().offlineMode) return;
       try {
         ws = new WebSocket("ws://localhost:8710/ws");
         ws.onmessage = (e) => {
@@ -128,7 +130,6 @@ export const FileTree = forwardRef<{ refresh: () => void }>(function FileTree(_p
           } catch {}
         };
         ws.onclose = () => {
-          // Reconnect after 3 seconds
           reconnectTimer = setTimeout(connect, 3000);
         };
         ws.onerror = () => {
@@ -139,7 +140,23 @@ export const FileTree = forwardRef<{ refresh: () => void }>(function FileTree(_p
 
     connect();
 
+    // React to offline mode changes
+    const unsub = useSettingsStore.subscribe(
+      (state, prev) => {
+        if (state.offlineMode !== prev.offlineMode) {
+          if (state.offlineMode) {
+            clearTimeout(reconnectTimer);
+            ws?.close();
+            ws = null;
+          } else {
+            connect();
+          }
+        }
+      }
+    );
+
     return () => {
+      unsub();
       clearTimeout(reconnectTimer);
       ws?.close();
     };

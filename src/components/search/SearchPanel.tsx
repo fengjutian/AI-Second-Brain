@@ -1,8 +1,11 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { FaMagnifyingGlass, FaSpinner } from "react-icons/fa6";
 import { api } from "@/lib/api";
+import { isTauri } from "@/lib/env";
+import { searchNotes, rebuildIndex } from "@/lib/localIndex";
 import { useNoteStore } from "@/stores/noteStore";
 import { useTabStore } from "@/stores/tabStore";
+import { useSettingsStore } from "@/stores/settingsStore";
 
 interface SearchResult {
   note_id: string;
@@ -51,25 +54,58 @@ export function SearchPanel() {
 
     const id = ++requestIdRef.current;
     setLoading(true);
-    api.search.keyword(q).then((data) => {
-      if (id === requestIdRef.current) {
-        setResults(data);
-        setSearched(true);
-        setLoading(false);
-      }
-    }).catch(() => {
-      if (id === requestIdRef.current) {
-        setResults([]);
-        setSearched(true);
-        setLoading(false);
-      }
-    });
+
+    if (isTauri()) {
+      const vaultPath = useSettingsStore.getState().vaultPath;
+      // Rebuild index on first search (cost amortized)
+      rebuildIndex(vaultPath).then(() => {
+        return searchNotes(vaultPath, q).then((data) => {
+          if (id === requestIdRef.current) {
+            setResults(data.map(r => ({
+              note_id: r.id, path: r.path, title: r.title, snippet: r.snippet, score: 0
+            })));
+            setSearched(true);
+            setLoading(false);
+          }
+        });
+      }).catch(() => {
+        if (id === requestIdRef.current) {
+          setResults([]);
+          setSearched(true);
+          setLoading(false);
+        }
+      });
+    } else {
+      api.search.keyword(q).then((data) => {
+        if (id === requestIdRef.current) {
+          setResults(data);
+          setSearched(true);
+          setLoading(false);
+        }
+      }).catch(() => {
+        if (id === requestIdRef.current) {
+          setResults([]);
+          setSearched(true);
+          setLoading(false);
+        }
+      });
+    }
   }, [debouncedQuery]);
 
   const handleOpen = async (result: SearchResult) => {
-    const note = await api.notes.get(result.note_id);
-    loadNote(result.note_id, note);
-    openTab({ noteId: result.note_id, title: note.title, path: note.path });
+    if (isTauri()) {
+      const { readTextFile } = await import("@tauri-apps/plugin-fs");
+      const raw = await readTextFile(result.note_id);
+      const content = raw.startsWith("---\n")
+        ? raw.slice(raw.indexOf("\n---\n", 4) + 5).trimStart()
+        : raw;
+      loadNote(result.note_id, { id: result.note_id, path: result.path, title: result.title, content });
+      openTab({ noteId: result.note_id, title: result.title, path: result.path });
+    } else {
+      const note = await api.notes.get(result.note_id);
+      loadNote(result.note_id, note);
+      openTab({ noteId: result.note_id, title: note.title, path: note.path });
+    }
   };
 
   return (

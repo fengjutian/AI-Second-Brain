@@ -10,6 +10,7 @@
     "core:window:allow-start-dragging",
     "dialog:default",
     "fs:default",
+    "sql:default",
     {
       "identifier": "fs:allow-read-dir",
       "allow": [{ "path": "**" }]
