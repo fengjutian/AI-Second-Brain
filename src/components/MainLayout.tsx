@@ -12,6 +12,8 @@ import { ChatPanel } from "@/components/sidebar/ChatPanel";
 import { TerminalPanel } from "@/components/sidebar/TerminalPanel";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { api } from "@/lib/api";
+import { isTauri } from "@/lib/env";
+import { loadRecentVaults, addRecentVault, removeRecentVaultLocal } from "@/lib/vaultsLocal";
 import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { FaChevronDown, FaFolderOpen, FaPlus, FaCheck, FaTrashCan } from "react-icons/fa6";
@@ -105,7 +107,11 @@ function VaultSwitcher() {
 
   // Load recent vaults
   useEffect(() => {
-    api.vaults.recent().then((d) => setRecentVaults(d.recent || [])).catch(() => {});
+    if (isTauri()) {
+      setRecentVaults(loadRecentVaults());
+    } else {
+      api.vaults.recent().then((d) => setRecentVaults(d.recent || [])).catch(() => {});
+    }
   }, [setRecentVaults]);
 
   // Click outside to close
@@ -123,10 +129,17 @@ function VaultSwitcher() {
       setSwitching(true);
       const selected = await open({ directory: true, multiple: false, title: "选择知识库文件夹" });
       if (selected && typeof selected === "string") {
-        const res = await api.vaults.open(selected);
+        if (!isTauri()) {
+          await api.vaults.open(selected);
+        }
         const name = selected.split(/[/\\]/).filter(Boolean).pop() || "知识库";
         openVault(selected, name);
-        api.vaults.recent().then((d) => setRecentVaults(d.recent || [])).catch(() => {});
+        if (isTauri()) {
+          const now = new Date().toISOString();
+          setRecentVaults(addRecentVault({ path: selected, name, opened_at: now }));
+        } else {
+          api.vaults.recent().then((d) => setRecentVaults(d.recent || [])).catch(() => {});
+        }
       }
     } catch (e) {
       console.error("Failed to open vault:", e);
@@ -140,9 +153,16 @@ function VaultSwitcher() {
     if (path === vaultPath) return;
     try {
       setSwitching(true);
-      await api.vaults.open(path);
+      if (!isTauri()) {
+        await api.vaults.open(path);
+      }
       openVault(path, name);
-      api.vaults.recent().then((d) => setRecentVaults(d.recent || [])).catch(() => {});
+      if (isTauri()) {
+        const now = new Date().toISOString();
+        setRecentVaults(addRecentVault({ path, name, opened_at: now }));
+      } else {
+        api.vaults.recent().then((d) => setRecentVaults(d.recent || [])).catch(() => {});
+      }
     } catch (e) {
       console.error("Failed to switch vault:", e);
     } finally {
@@ -153,7 +173,11 @@ function VaultSwitcher() {
   const handleRemove = async (e: React.MouseEvent, path: string) => {
     e.stopPropagation();
     try {
-      await api.vaults.removeRecent(path);
+      if (isTauri()) {
+        setRecentVaults(removeRecentVaultLocal(path));
+      } else {
+        await api.vaults.removeRecent(path);
+      }
       removeRecentVault(path);
     } catch {}
   };
@@ -227,7 +251,11 @@ function VaultPrompt() {
   const recentVaults = useSettingsStore((s) => s.recentVaults);
 
   useEffect(() => {
-    api.vaults.recent().then((d) => setRecentVaults(d.recent || [])).catch(() => {});
+    if (isTauri()) {
+      setRecentVaults(loadRecentVaults());
+    } else {
+      api.vaults.recent().then((d) => setRecentVaults(d.recent || [])).catch(() => {});
+    }
   }, [setRecentVaults]);
 
   const handleOpenVault = async () => {
@@ -239,10 +267,17 @@ function VaultPrompt() {
         title: "选择知识库文件夹",
       });
       if (selected && typeof selected === "string") {
-        await api.vaults.open(selected);
+        if (!isTauri()) {
+          await api.vaults.open(selected);
+        }
         const name = selected.split(/[/\\]/).filter(Boolean).pop() || "知识库";
         openVault(selected, name);
-        api.vaults.recent().then((d) => setRecentVaults(d.recent || [])).catch(() => {});
+        if (isTauri()) {
+          const now = new Date().toISOString();
+          setRecentVaults(addRecentVault({ path: selected, name, opened_at: now }));
+        } else {
+          api.vaults.recent().then((d) => setRecentVaults(d.recent || [])).catch(() => {});
+        }
       }
     } catch (e) {
       console.error("Failed to open folder dialog:", e);
@@ -254,9 +289,16 @@ function VaultPrompt() {
   const handleOpenRecent = async (path: string, name: string) => {
     try {
       setLoading(true);
-      await api.vaults.open(path);
+      if (!isTauri()) {
+        await api.vaults.open(path);
+      }
       openVault(path, name);
-      api.vaults.recent().then((d) => setRecentVaults(d.recent || [])).catch(() => {});
+      if (isTauri()) {
+        const now = new Date().toISOString();
+        setRecentVaults(addRecentVault({ path, name, opened_at: now }));
+      } else {
+        api.vaults.recent().then((d) => setRecentVaults(d.recent || [])).catch(() => {});
+      }
     } catch (e) {
       console.error("Failed to open recent vault:", e);
     } finally {

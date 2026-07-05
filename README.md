@@ -100,6 +100,9 @@ Rainstone 是一个本地优先的个人知识管理（PKM）应用，结合了 
 | Tauri SQL Plugin | 本地 SQLite |
 | Tauri Dialog Plugin | 文件夹选择 |
 
+
+uvicorn main:app --port 8710 --reload
+
 ---
 
 ## 项目结构

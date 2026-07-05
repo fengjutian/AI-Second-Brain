@@ -2,6 +2,8 @@ import { FaSun, FaMoon, FaDisplay, FaFolderOpen, FaTrashCan } from "react-icons/
 import { useSettingsStore, type Theme } from "@/stores/settingsStore";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
+import { isTauri } from "@/lib/env";
+import { loadRecentVaults, addRecentVault, removeRecentVaultLocal } from "@/lib/vaultsLocal";
 import { useState, useEffect, useCallback } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 
@@ -25,7 +27,11 @@ export function GeneralSection() {
   const [opening, setOpening] = useState(false);
 
   useEffect(() => {
-    api.vaults.recent().then((d) => setRecentVaults(d.recent || [])).catch(() => {});
+    if (isTauri()) {
+      setRecentVaults(loadRecentVaults());
+    } else {
+      api.vaults.recent().then((d) => setRecentVaults(d.recent || [])).catch(() => {});
+    }
   }, [setRecentVaults]);
 
   const handleOpenVault = useCallback(async () => {
@@ -33,10 +39,17 @@ export function GeneralSection() {
       setOpening(true);
       const selected = await open({ directory: true, multiple: false, title: "选择知识库文件夹" });
       if (selected && typeof selected === "string") {
-        await api.vaults.open(selected);
+        if (!isTauri()) {
+          await api.vaults.open(selected);
+        }
         const name = selected.split(/[/\\]/).filter(Boolean).pop() || "知识库";
         openVault(selected, name);
-        api.vaults.recent().then((d) => setRecentVaults(d.recent || [])).catch(() => {});
+        if (isTauri()) {
+          const now = new Date().toISOString();
+          setRecentVaults(addRecentVault({ path: selected, name, opened_at: now }));
+        } else {
+          api.vaults.recent().then((d) => setRecentVaults(d.recent || [])).catch(() => {});
+        }
       }
     } catch (e) {
       console.error("Failed to open vault:", e);
@@ -48,9 +61,16 @@ export function GeneralSection() {
   const handleSwitchVault = useCallback(async (path: string, name: string) => {
     try {
       setOpening(true);
-      await api.vaults.open(path);
+      if (!isTauri()) {
+        await api.vaults.open(path);
+      }
       openVault(path, name);
-      api.vaults.recent().then((d) => setRecentVaults(d.recent || [])).catch(() => {});
+      if (isTauri()) {
+        const now = new Date().toISOString();
+        setRecentVaults(addRecentVault({ path, name, opened_at: now }));
+      } else {
+        api.vaults.recent().then((d) => setRecentVaults(d.recent || [])).catch(() => {});
+      }
     } catch (e) {
       console.error("Failed to switch vault:", e);
     } finally {
@@ -60,12 +80,16 @@ export function GeneralSection() {
 
   const handleRemoveRecent = useCallback(async (path: string) => {
     try {
-      await api.vaults.removeRecent(path);
+      if (isTauri()) {
+        setRecentVaults(removeRecentVaultLocal(path));
+      } else {
+        await api.vaults.removeRecent(path);
+      }
       removeRecentVault(path);
     } catch (e) {
       console.error("Failed to remove recent vault:", e);
     }
-  }, [removeRecentVault]);
+  }, [removeRecentVault, setRecentVaults]);
 
   return (
     <div className="space-y-8">
