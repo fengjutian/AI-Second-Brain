@@ -157,9 +157,14 @@ export function WhiteboardPanel() {
         ) : (
           <span className="text-[11px] text-zinc-400">{activeFile}</span>
         )}
+        {savePath && (
+          <span className="text-[10px] text-zinc-400 truncate ml-1" title={savePath}>
+            {savePath}
+          </span>
+        )}
         <button
           onClick={() => setNewDialogOpen(true)}
-          className="flex items-center gap-0.5 text-[11px] text-accent hover:text-accent-hover ml-1"
+          className="flex items-center gap-0.5 text-[11px] text-accent hover:text-accent-hover ml-auto"
           title="新建白板"
         >
           <FaPlus size={10} /> 新建
