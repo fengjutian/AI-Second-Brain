@@ -168,8 +168,19 @@ export const FileTree = forwardRef<{ refresh: () => void }>(function FileTree(_p
   const handleOpen = useCallback(async (noteId: string, relPath: string) => {
     const title = relPath.split("/").pop() || relPath;
 
+    // Excel / CSV files — skip content loading, ExcelViewer handles it
+    const isExcel = /\.(xlsx|xls|xlsm|csv|tsv)$/i.test(relPath);
+
     if (isTauri()) {
       // Tauri: read file directly from filesystem
+      // Binary files (Excel etc.) — don't try readTextFile, delegate to viewer
+      if (isExcel) {
+        const note = { id: noteId, path: relPath, title, content: "" };
+        loadNote(noteId, note);
+        openTab({ noteId, title, path: relPath });
+        return;
+      }
+
       const { readTextFile } = await import("@tauri-apps/plugin-fs");
       let raw: string;
       try {
@@ -200,6 +211,13 @@ export const FileTree = forwardRef<{ refresh: () => void }>(function FileTree(_p
       openTab({ noteId, title, path: relPath });
     } else {
       // Browser: try API, fallback gracefully for non-note files
+      // Excel files — just open, viewer handles loading
+      if (isExcel) {
+        const note = { id: noteId, path: relPath, title, content: "" };
+        loadNote(noteId, note);
+        openTab({ noteId, title, path: relPath });
+        return;
+      }
       try {
         const note = await api.notes.get(noteId);
         loadNote(noteId, note);

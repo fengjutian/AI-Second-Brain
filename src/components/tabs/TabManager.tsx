@@ -1,7 +1,10 @@
 import { useTabStore } from "@/stores/tabStore";
 import { Editor } from "@/components/editor/Editor";
+import { ExcelViewer } from "@/components/editor/ExcelViewer";
 import { FaXmark } from "react-icons/fa6";
 import { cn } from "@/lib/utils";
+
+const EXCEL_EXTENSIONS = /\.(xlsx|xls|xlsm|csv|tsv)$/i;
 
 export function TabManager() {
   const tabs = useTabStore((s) => s.tabs);
@@ -21,6 +24,8 @@ export function TabManager() {
   }
 
   const activeTab = tabs.find((t) => t.id === activeTabId);
+
+  const isExcel = activeTab && EXCEL_EXTENSIONS.test(activeTab.path);
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
@@ -54,7 +59,11 @@ export function TabManager() {
 
       {/* Editor Area */}
       <div className="flex-1 overflow-hidden">
-        {activeTab && <Editor key={activeTab.id} tabId={activeTab.id} noteId={activeTab.noteId} />}
+        {activeTab && isExcel ? (
+          <ExcelViewer key={activeTab.id} noteId={activeTab.noteId} path={activeTab.path} />
+        ) : activeTab ? (
+          <Editor key={activeTab.id} tabId={activeTab.id} noteId={activeTab.noteId} />
+        ) : null}
       </div>
     </div>
   );
