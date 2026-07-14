@@ -168,13 +168,16 @@ export const FileTree = forwardRef<{ refresh: () => void }>(function FileTree(_p
   const handleOpen = useCallback(async (noteId: string, relPath: string) => {
     const title = relPath.split("/").pop() || relPath;
 
-    // Excel / CSV files — skip content loading, ExcelViewer handles it
+    // Excel / CSV / PDF / Image files — skip content loading, viewer handles it
     const isExcel = /\.(xlsx|xls|xlsm|csv|tsv)$/i.test(relPath);
+    const isPdf = /\.pdf$/i.test(relPath);
+    const isImage = /\.(png|jpe?g|svg|gif|webp|bmp|ico)$/i.test(relPath);
+    const isBinary = isExcel || isPdf || isImage;
 
     if (isTauri()) {
       // Tauri: read file directly from filesystem
-      // Binary files (Excel etc.) — don't try readTextFile, delegate to viewer
-      if (isExcel) {
+      // Binary files (Excel, PDF etc.) — don't try readTextFile, delegate to viewer
+      if (isBinary) {
         const note = { id: noteId, path: relPath, title, content: "" };
         loadNote(noteId, note);
         openTab({ noteId, title, path: relPath });
@@ -211,8 +214,8 @@ export const FileTree = forwardRef<{ refresh: () => void }>(function FileTree(_p
       openTab({ noteId, title, path: relPath });
     } else {
       // Browser: try API, fallback gracefully for non-note files
-      // Excel files — just open, viewer handles loading
-      if (isExcel) {
+      // Binary files (Excel, PDF) — just open, viewer handles loading
+      if (isBinary) {
         const note = { id: noteId, path: relPath, title, content: "" };
         loadNote(noteId, note);
         openTab({ noteId, title, path: relPath });

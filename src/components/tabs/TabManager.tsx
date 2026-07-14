@@ -1,10 +1,16 @@
 import { useTabStore } from "@/stores/tabStore";
 import { Editor } from "@/components/editor/Editor";
 import { ExcelViewer } from "@/components/editor/ExcelViewer";
+import { PdfViewer } from "@/components/editor/PdfViewer";
+import { ImageViewer } from "@/components/editor/ImageViewer";
+import { CodeViewer } from "@/components/editor/CodeViewer";
 import { FaXmark } from "react-icons/fa6";
 import { cn } from "@/lib/utils";
 
 const EXCEL_EXTENSIONS = /\.(xlsx|xls|xlsm|csv|tsv)$/i;
+const PDF_EXTENSIONS = /\.pdf$/i;
+const IMAGE_EXTENSIONS = /\.(png|jpe?g|svg|gif|webp|bmp|ico)$/i;
+const CODE_EXTENSIONS = /\.(js|jsx|ts|tsx|py|rs|go|java|c|cpp|h|hpp|rb|php|swift|kt|scala|r|lua|sh|bash|zsh|fish|ps1|bat|cmd|sql|graphql|json|yaml|yml|toml|xml|html|css|scss|less|vue|svelte|astro|txt|log|env|cfg|ini|conf|Makefile|Dockerfile|nginx\.conf)$/i;
 
 export function TabManager() {
   const tabs = useTabStore((s) => s.tabs);
@@ -26,6 +32,9 @@ export function TabManager() {
   const activeTab = tabs.find((t) => t.id === activeTabId);
 
   const isExcel = activeTab && EXCEL_EXTENSIONS.test(activeTab.path);
+  const isPdf = activeTab && PDF_EXTENSIONS.test(activeTab.path);
+  const isImage = activeTab && IMAGE_EXTENSIONS.test(activeTab.path);
+  const isCode = activeTab && CODE_EXTENSIONS.test(activeTab.path);
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
@@ -61,6 +70,12 @@ export function TabManager() {
       <div className="flex-1 overflow-hidden">
         {activeTab && isExcel ? (
           <ExcelViewer key={activeTab.id} noteId={activeTab.noteId} path={activeTab.path} />
+        ) : activeTab && isPdf ? (
+          <PdfViewer key={activeTab.id} noteId={activeTab.noteId} path={activeTab.path} />
+        ) : activeTab && isImage ? (
+          <ImageViewer key={activeTab.id} noteId={activeTab.noteId} path={activeTab.path} />
+        ) : activeTab && isCode ? (
+          <CodeViewer key={activeTab.id} noteId={activeTab.noteId} path={activeTab.path} />
         ) : activeTab ? (
           <Editor key={activeTab.id} tabId={activeTab.id} noteId={activeTab.noteId} />
         ) : null}

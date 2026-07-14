@@ -140,6 +140,29 @@
   @apply mt-0.5;
 }
 
+/* ── Table ── */
+.tiptap table {
+  @apply border-collapse my-4 w-full overflow-hidden rounded-lg;
+}
+.tiptap table th,
+.tiptap table td {
+  @apply border border-zinc-300 dark:border-zinc-600 px-3 py-2 text-left text-sm min-w-[100px] relative;
+}
+.tiptap table th {
+  @apply bg-zinc-100 dark:bg-zinc-800 font-semibold text-zinc-700 dark:text-zinc-200;
+}
+.tiptap table td {
+  @apply bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300;
+}
+.tiptap table .selectedCell {
+  @apply bg-accent/10 outline-2 outline-accent outline;
+}
+
+/* ── Highlight ── */
+.tiptap mark {
+  @apply bg-yellow-200 dark:bg-yellow-800 text-inherit rounded-sm px-0.5;
+}
+
 /* ── Cytoscape ── */
 .graph-container {
   @apply w-full h-full;

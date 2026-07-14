@@ -82,6 +82,39 @@ const items: SlashCommandItem[] = [
       editor.chain().focus().deleteRange(range).setParagraph().run();
     },
   },
+  {
+    title: "任务列表",
+    description: "可勾选的任务项",
+    icon: "☑",
+    command: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).toggleTaskList().run();
+    },
+  },
+  {
+    title: "表格",
+    description: "插入表格",
+    icon: "⊞",
+    command: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
+    },
+  },
+  {
+    title: "图片",
+    description: "插入图片链接",
+    icon: "🖼",
+    command: ({ editor, range }) => {
+      const url = window.prompt("图片地址", "https://");
+      if (url) editor.chain().focus().deleteRange(range).setImage({ src: url }).run();
+    },
+  },
+  {
+    title: "高亮",
+    description: "高亮选中文字",
+    icon: "✏",
+    command: ({ editor }) => {
+      editor.chain().focus().toggleHighlight().run();
+    },
+  },
 ];
 
 export const slashCommandPluginKey = new PluginKey("slash-command");

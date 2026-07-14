@@ -3,6 +3,17 @@ import { BubbleMenu } from "@tiptap/react/menus";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Mention from "@tiptap/extension-mention";
+import Table from "@tiptap/extension-table";
+import TableRow from "@tiptap/extension-table-row";
+import TableCell from "@tiptap/extension-table-cell";
+import TableHeader from "@tiptap/extension-table-header";
+import ImageExtension from "@tiptap/extension-image";
+import TaskList from "@tiptap/extension-task-list";
+import TaskItem from "@tiptap/extension-task-item";
+import Highlight from "@tiptap/extension-highlight";
+import TextAlign from "@tiptap/extension-text-align";
+import Typography from "@tiptap/extension-typography";
+import CharacterCount from "@tiptap/extension-character-count";
 import { useNoteStore } from "@/stores/noteStore";
 import { useTabStore } from "@/stores/tabStore";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -15,7 +26,7 @@ import { api } from "@/lib/api";
 import { isTauri } from "@/lib/env";
 import {
   FaBold, FaItalic, FaStrikethrough, FaCode, FaHeading, FaListUl, FaListOl, FaQuoteRight, FaParagraph, FaGripVertical, FaUnderline, FaLink,
-  FaCircleInfo, FaChevronDown,
+  FaCircleInfo, FaChevronDown, FaTable, FaImage, FaListCheck, FaHighlighter, FaAlignLeft, FaAlignCenter, FaAlignRight,
 } from "react-icons/fa6";
 import { cn, htmlToMarkdown } from "@/lib/utils";
 
@@ -82,6 +93,28 @@ export function Editor({ tabId, noteId }: EditorProps) {
         },
       }),
       SlashCommand,
+      Table.configure({
+        resizable: true,
+      }),
+      TableRow,
+      TableCell,
+      TableHeader,
+      ImageExtension.configure({
+        allowBase64: true,
+        inline: false,
+      }),
+      TaskList,
+      TaskItem.configure({
+        nested: true,
+      }),
+      Highlight.configure({
+        multicolor: true,
+      }),
+      TextAlign.configure({
+        types: ["heading", "paragraph"],
+      }),
+      Typography,
+      CharacterCount,
     ],
     content: note?.content || "",
     autofocus: false,
@@ -259,6 +292,7 @@ export function Editor({ tabId, noteId }: EditorProps) {
                   if (url === "") { editor.chain().focus().unsetLink().run(); return; }
                   editor.chain().focus().setLink({ href: url }).run();
                 }} title="链接"><FaLink size={15} /></BubbleBtn>
+                <BubbleBtn active={editor.isActive("highlight")} onClick={() => editor.chain().focus().toggleHighlight().run()} title="高亮"><FaHighlighter size={15} /></BubbleBtn>
                 <BubbleBtn active={false} onClick={() => editor.chain().focus().unsetAllMarks().clearNodes().run()} title="清除格式"><FaUnderline size={15} /></BubbleBtn>
               </div>
               {/* Block type */}
@@ -270,6 +304,19 @@ export function Editor({ tabId, noteId }: EditorProps) {
                 <BubbleBtn active={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()} title="无序列表"><FaListUl size={15} /></BubbleBtn>
                 <BubbleBtn active={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()} title="有序列表"><FaListOl size={15} /></BubbleBtn>
                 <BubbleBtn active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()} title="引用"><FaQuoteRight size={15} /></BubbleBtn>
+                <BubbleBtn active={editor.isActive("taskList")} onClick={() => editor.chain().focus().toggleTaskList().run()} title="任务列表"><FaListCheck size={15} /></BubbleBtn>
+              </div>
+              {/* Alignment & Insert */}
+              <div className="flex items-center gap-0.5 border-t border-zinc-100 dark:border-zinc-800 pt-1">
+                <BubbleBtn active={editor.isActive({ textAlign: "left" })} onClick={() => editor.chain().focus().setTextAlign("left").run()} title="左对齐"><FaAlignLeft size={15} /></BubbleBtn>
+                <BubbleBtn active={editor.isActive({ textAlign: "center" })} onClick={() => editor.chain().focus().setTextAlign("center").run()} title="居中"><FaAlignCenter size={15} /></BubbleBtn>
+                <BubbleBtn active={editor.isActive({ textAlign: "right" })} onClick={() => editor.chain().focus().setTextAlign("right").run()} title="右对齐"><FaAlignRight size={15} /></BubbleBtn>
+                <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-700 mx-0.5" />
+                <BubbleBtn active={false} onClick={() => {
+                  const url = window.prompt("图片地址", "https://");
+                  if (url) editor.chain().focus().setImage({ src: url }).run();
+                }} title="插入图片"><FaImage size={15} /></BubbleBtn>
+                <BubbleBtn active={false} onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} title="插入表格"><FaTable size={15} /></BubbleBtn>
               </div>
             </BubbleMenu>
           )}
