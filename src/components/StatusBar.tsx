@@ -12,11 +12,11 @@ export function StatusBar() {
     <div className="h-7 bg-zinc-100 dark:bg-zinc-800 border-t border-zinc-200 dark:border-zinc-700 flex items-center px-4 text-xs text-zinc-500 dark:text-zinc-400 gap-4 select-none shrink-0">
       {savePath ? (
         <span className={saved ? "text-green-500" : ""}>
-          {saved ? `✓ 已保存` : `📋 ${savePath}`}
+          {saved ? `✓ 已保存` : `📋 ${savePath.split(/[/\\]/).pop()}`}
         </span>
       ) : (
         <>
-          <span>{note?.path || "—"}</span>
+          <span>{note?.path ? note.path.split(/[/\\]/).pop() : "—"}</span>
           <span>{note ? `${note.content.length} 字符` : ""}</span>
           {activeTab?.isDirty && <span className="text-accent">未保存</span>}
         </>

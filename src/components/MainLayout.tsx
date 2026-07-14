@@ -78,6 +78,7 @@ export function MainLayout() {
         <div className={activePane === "terminal" ? "flex-1 flex flex-col min-w-0" : "hidden"}>
           <TerminalPanel />
         </div>
+
         {activePane !== "graph" && activePane !== "whiteboard" && activePane !== "browser" && activePane !== "chat" && activePane !== "terminal" ? (
           <>
             <div className="flex-1 flex flex-col min-w-0 animate-fade-in">

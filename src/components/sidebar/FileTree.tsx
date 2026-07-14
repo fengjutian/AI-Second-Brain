@@ -52,7 +52,7 @@ function buildTree(notes: { path: string; title: string; id: string }[]): TreeNo
   return root.children;
 }
 
-/** Recursively scan vault directory for .md files using Tauri FS plugin */
+/** Recursively scan vault directory for all files using Tauri FS plugin */
 async function scanDirectory(dirPath: string, rootPath?: string): Promise<{ id: string; path: string; title: string }[]> {
   const { readDir } = await import("@tauri-apps/plugin-fs");
   const entries = await readDir(dirPath);
@@ -68,9 +68,8 @@ async function scanDirectory(dirPath: string, rootPath?: string): Promise<{ id: 
     if (entry.isDirectory) {
       const children = await scanDirectory(fullPath, base);
       results.push(...children);
-    } else if (entry.name.endsWith(".md")) {
-      const title = entry.name.replace(/\.md$/, "");
-      results.push({ id: fullPath, path: relPath, title });
+    } else {
+      results.push({ id: fullPath, path: relPath, title: entry.name });
     }
   }
   return results;
@@ -167,21 +166,32 @@ export const FileTree = forwardRef<{ refresh: () => void }>(function FileTree(_p
   const tree = useMemo(() => buildTree(notes), [notes]);
 
   const handleOpen = useCallback(async (noteId: string, relPath: string) => {
+    const title = relPath.split("/").pop() || relPath;
+
     if (isTauri()) {
       // Tauri: read file directly from filesystem
       const { readTextFile } = await import("@tauri-apps/plugin-fs");
-      let raw = await readTextFile(noteId);
-      const title = relPath.replace(/\.md$/, "").split("/").pop() || relPath;
+      let raw: string;
+      try {
+        raw = await readTextFile(noteId);
+      } catch {
+        // Binary or unreadable file — show placeholder
+        const note = { id: noteId, path: relPath, title, content: `[无法预览此文件: ${title}]` };
+        loadNote(noteId, note);
+        openTab({ noteId, title, path: relPath });
+        return;
+      }
 
-      // Strip YAML frontmatter (between first pair of ---)
-      // Normalize line endings first — Tauri may return \r\n on Windows
-      const normalized = raw.replace(/\r\n/g, "\n");
-      if (normalized.startsWith("---\n")) {
-        const end = normalized.indexOf("\n---\n", 4);
-        if (end !== -1) {
-          raw = normalized.slice(end + 5).trimStart();
-        } else {
-          raw = normalized;
+      // Strip YAML frontmatter only for .md files
+      if (relPath.endsWith(".md")) {
+        const normalized = raw.replace(/\r\n/g, "\n");
+        if (normalized.startsWith("---\n")) {
+          const end = normalized.indexOf("\n---\n", 4);
+          if (end !== -1) {
+            raw = normalized.slice(end + 5).trimStart();
+          } else {
+            raw = normalized;
+          }
         }
       }
 
@@ -189,9 +199,16 @@ export const FileTree = forwardRef<{ refresh: () => void }>(function FileTree(_p
       loadNote(noteId, note);
       openTab({ noteId, title, path: relPath });
     } else {
-      const note = await api.notes.get(noteId);
-      loadNote(noteId, note);
-      openTab({ noteId, title: note.title, path: note.path });
+      // Browser: try API, fallback gracefully for non-note files
+      try {
+        const note = await api.notes.get(noteId);
+        loadNote(noteId, note);
+        openTab({ noteId, title: note.title, path: note.path });
+      } catch {
+        const note = { id: noteId, path: relPath, title, content: `[无法预览此文件: ${title}]` };
+        loadNote(noteId, note);
+        openTab({ noteId, title, path: relPath });
+      }
     }
   }, [loadNote, openTab]);
 
@@ -264,7 +281,7 @@ export const FileTree = forwardRef<{ refresh: () => void }>(function FileTree(_p
         </button>
       </div>
       {tree.length === 0 ? (
-        <p className="text-xs text-zinc-400 px-1 py-2">暂无笔记</p>
+        <p className="text-xs text-zinc-400 px-1 py-2">暂无文件</p>
       ) : (
         tree.map((node) => (
           <TreeNodeItem
@@ -340,12 +357,12 @@ const TreeNodeItem = memo(function TreeNodeItem({
         onClick={() => note && onOpen(note.id, node.path)}
       >
         <FaFile size={12} className="shrink-0 text-blue-700 dark:text-blue-400" />
-        <span className="truncate">{node.name.replace(/\.md$/, "")}</span>
+        <span className="truncate">{node.name}</span>
       </button>
       {/* Delete button — visible on hover */}
       <button
         className="p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-red-100 dark:hover:bg-red-900/30 text-zinc-400 hover:text-red-500 transition-all shrink-0"
-        title="删除笔记"
+        title="删除文件"
         onClick={(e) => {
           e.stopPropagation();
           if (note) onDelete(note.id);
