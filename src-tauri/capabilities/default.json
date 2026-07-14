@@ -12,6 +12,10 @@
     "fs:default",
     "sql:default",
     {
+      "identifier": "sql:allow-execute",
+      "allow": [{ "sql": "**" }]
+    },
+    {
       "identifier": "fs:allow-read-dir",
       "allow": [{ "path": "**" }]
     },

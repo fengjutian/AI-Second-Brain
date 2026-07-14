@@ -100,9 +100,13 @@ export function GraphCore({ fontSize = 10, edgeWidth = 1.5 }: GraphCoreProps) {
       .catch((e) => {
         if (!mounted) return;
         console.error("Failed to load graph:", e);
-        const msg = e?.message || "";
+        const msg = e?.message || String(e);
         if (msg.includes("Vault not initialized") || msg.includes("Internal server error")) {
           setError("请先打开一个知识库");
+        } else if (msg.includes("sql.execute not allowed") || msg.includes("sql:allow-execute")) {
+          setError("请重新编译 Tauri 应用以启用本地数据库权限");
+        } else if (msg.includes("not allowed")) {
+          setError("权限不足，请检查 Tauri 能力配置并重新编译");
         } else {
           setError("无法加载知识图谱");
         }
