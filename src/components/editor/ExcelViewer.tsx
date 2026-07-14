@@ -157,14 +157,6 @@ export function ExcelViewer({ noteId, path: _path }: ExcelViewerProps) {
     );
   }
 
-  if (loading || !hotReady) {
-    return (
-      <div className="h-full flex items-center justify-center text-zinc-400">
-        <FaSpinner className="animate-spin text-2xl" />
-      </div>
-    );
-  }
-
   return (
     <div className="h-full flex flex-col">
       {/* Sheet tabs */}
@@ -185,8 +177,14 @@ export function ExcelViewer({ noteId, path: _path }: ExcelViewerProps) {
           ))}
         </div>
       )}
-      {/* Handsontable container */}
-      <div className="flex-1 w-full overflow-hidden" ref={containerRef} />
+      {/* Handsontable container — always rendered so the ref is attached before init */}
+      <div className="flex-1 w-full overflow-hidden" ref={containerRef}>
+        {(loading || !hotReady) && (
+          <div className="h-full flex items-center justify-center text-zinc-400">
+            <FaSpinner className="animate-spin text-2xl" />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
