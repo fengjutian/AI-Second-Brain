@@ -2,8 +2,8 @@ import { useState, useRef } from "react";
 import { FaArrowLeft, FaArrowRight, FaRotateRight, FaMagnifyingGlass } from "react-icons/fa6";
 
 export function BrowserPanel() {
-  const [url, setUrl] = useState("https://www.baidu.com");
-  const [inputUrl, setInputUrl] = useState("https://www.baidu.com");
+  const [url, setUrl] = useState("about:blank");
+  const [inputUrl, setInputUrl] = useState("");
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const navigate = () => {
@@ -47,7 +47,8 @@ export function BrowserPanel() {
         </button>
       </div>
       {/* WebView area */}
-      <iframe ref={iframeRef} src={url} className="flex-1 w-full border-none" title="Browser" />
+      <iframe ref={iframeRef} src={url} className="flex-1 w-full border-none" title="Browser"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads" />
     </div>
   );
 }

@@ -90,7 +90,12 @@ export function GraphCore({ fontSize = 10, edgeWidth = 1.5 }: GraphCoreProps) {
       .catch((e) => {
         if (!mounted) return;
         console.error("Failed to load graph:", e);
-        setError("无法加载知识图谱");
+        const msg = e?.message || "";
+        if (msg.includes("Vault not initialized") || msg.includes("Internal server error")) {
+          setError("请先打开一个知识库");
+        } else {
+          setError("无法加载知识图谱");
+        }
         setLoading(false);
       });
 
