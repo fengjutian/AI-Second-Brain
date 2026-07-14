@@ -2,6 +2,9 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import cytoscape from "cytoscape";
 import { FaSpinner, FaPlus, FaMinus, FaExpand } from "react-icons/fa6";
 import { api } from "@/lib/api";
+import { isTauri } from "@/lib/env";
+import { getLocalGraph } from "@/lib/localIndex";
+import { useSettingsStore } from "@/stores/settingsStore";
 
 interface GraphCoreProps {
   /** Node label font size (default 10) */
@@ -48,8 +51,15 @@ export function GraphCore({ fontSize = 10, edgeWidth = 1.5 }: GraphCoreProps) {
     });
     cyRef.current = cy;
 
-    api.graph
-      .global()
+    const loadGraph = isTauri()
+      ? () => {
+          const vaultPath = useSettingsStore.getState().vaultPath;
+          if (!vaultPath) throw new Error("Vault not initialized");
+          return getLocalGraph(vaultPath);
+        }
+      : () => api.graph.global();
+
+    loadGraph()
       .then((data) => {
         if (!mounted) return;
         if (!data.nodes) {

@@ -158,3 +158,20 @@ export async function closeIndex(): Promise<void> {
     dbPromise = null;
   }
 }
+
+// ── Graph ──
+
+export async function getLocalGraph(vaultPath: string): Promise<{
+  nodes: { id: string; label: string; path: string }[];
+  edges: { source: string; target: string }[];
+}> {
+  const db = await getDb(vaultPath);
+  const nodes: any[] = await db.select("SELECT id, title, path FROM notes");
+  const edges: any[] = await db.select(
+    "SELECT source_id, target_id FROM links WHERE target_id IS NOT NULL"
+  );
+  return {
+    nodes: nodes.map((r: any) => ({ id: r.id, label: r.title, path: r.path })),
+    edges: edges.map((r: any) => ({ source: r.source_id, target: r.target_id })),
+  };
+}
