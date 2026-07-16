@@ -48,6 +48,7 @@ export function RightSidebar() {
 
     if (isTauri()) {
       const vaultPath = useSettingsStore.getState().vaultPath;
+      if (!vaultPath || !currentId) return;
       rebuildIndex(vaultPath).then(() => {
         if (cancelled) return;
         outgoingLinks(vaultPath, currentId).then((data) => {

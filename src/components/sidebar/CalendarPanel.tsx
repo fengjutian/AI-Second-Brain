@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { FaChevronLeft, FaChevronRight, FaFile, FaCalendar } from "react-icons/fa6";
+import { FaChevronLeft, FaChevronRight, FaFile } from "react-icons/fa6";
 import { useNoteStore } from "@/stores/noteStore";
 import { useTabStore } from "@/stores/tabStore";
 import { useSettingsStore } from "@/stores/settingsStore";

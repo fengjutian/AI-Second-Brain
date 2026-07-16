@@ -1,7 +1,6 @@
 import { Extension } from "@tiptap/core";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
-import tippy from "tippy.js";
 
 const WIKI_REGEX = /\[\[([^\]]+)\]\]/g;
 
@@ -50,7 +49,6 @@ export const WikiLinkHighlight = Extension.create({
     const options = this.options;
     const pluginKey = new PluginKey("wikiLinkHighlight");
     let currentTarget: string | null = null;
-    let tooltipInstance: any = null;
     let hideTimer: ReturnType<typeof setTimeout> | null = null;
 
     return [
@@ -72,7 +70,7 @@ export const WikiLinkHighlight = Extension.create({
             return pluginKey.getState(state);
           },
           handleDOMEvents: {
-            mouseover(view, event) {
+            mouseover(_view, event) {
               const target = event.target as HTMLElement;
               const wikiLink = target.closest("[data-target]");
               if (!wikiLink) return false;
@@ -92,7 +90,7 @@ export const WikiLinkHighlight = Extension.create({
               }
               return false;
             },
-            mouseout(view, event) {
+            mouseout(_view, event) {
               const target = event.target as HTMLElement;
               const wikiLink = target.closest("[data-target]");
               if (!wikiLink) return false;

@@ -1,10 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { isTauri } from "@/lib/env";
 import { searchNotes } from "@/lib/localIndex";
 import { useSettingsStore } from "@/stores/settingsStore";
-import { useNoteStore } from "@/stores/noteStore";
-import { useTabStore } from "@/stores/tabStore";
 import { FaSpinner } from "react-icons/fa6";
 
 interface HoverPreviewProps {
@@ -35,7 +33,7 @@ export function HoverPreview({ target, position, onMouseEnter, onMouseLeave }: H
 
         if (isTauri()) {
           const vaultPath = useSettingsStore.getState().vaultPath;
-          const results = await searchNotes(vaultPath, target);
+          const results = await searchNotes(vaultPath, target!);
           match = results.find(
             (r: any) => r.title.toLowerCase() === target.toLowerCase()
           );
@@ -54,6 +52,7 @@ export function HoverPreview({ target, position, onMouseEnter, onMouseLeave }: H
         }
 
         const noteId = (match as any).note_id || (match as any).id;
+        if (!noteId) { if (!cancelled) { setError(true); setLoading(false); } return; }
         const note = await api.notes.get(noteId);
         if (cancelled) return;
 

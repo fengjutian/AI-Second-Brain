@@ -5,7 +5,6 @@ import { isTauri } from "@/lib/env";
 import { useTabStore } from "@/stores/tabStore";
 import { useNoteStore } from "@/stores/noteStore";
 import { useSettingsStore } from "@/stores/settingsStore";
-import { cn } from "@/lib/utils";
 import { InputDialog } from "@/components/ui/InputDialog";
 import { resetWikiLinkCache } from "@/components/editor/WikiLink";
 import { invalidateCalendarCache } from "@/components/sidebar/CalendarPanel";
@@ -87,7 +86,7 @@ export const FileTree = forwardRef<{ refresh: () => void }>(function FileTree(_p
       // Tauri: scan vault directory directly via Tauri FS plugin
       const load = async () => {
         try {
-          const files = await scanDirectory(vaultPath);
+          const files = await scanDirectory(vaultPath!);
           setNotes(files);
         } catch (e) {
           console.error("Failed to scan vault via Tauri FS:", e);
@@ -104,7 +103,7 @@ export const FileTree = forwardRef<{ refresh: () => void }>(function FileTree(_p
   const refreshRef = useRef<() => void>(() => {});
   refreshRef.current = () => {
     if (isTauri()) {
-      scanDirectory(vaultPath).then(setNotes).catch(() => {});
+      scanDirectory(vaultPath!).then(setNotes).catch(() => {});
     } else {
       api.notes.list().then(setNotes).catch(() => {});
     }
@@ -178,7 +177,7 @@ export const FileTree = forwardRef<{ refresh: () => void }>(function FileTree(_p
       // Tauri: read file directly from filesystem
       // Binary files (Excel, PDF etc.) — don't try readTextFile, delegate to viewer
       if (isBinary) {
-        const note = { id: noteId, path: relPath, title, content: "" };
+        const note = { id: noteId, path: relPath, title, content: "", tags: [] as string[], aliases: [] as string[], created: "", updated: "" };
         loadNote(noteId, note);
         openTab({ noteId, title, path: relPath });
         return;
@@ -190,7 +189,7 @@ export const FileTree = forwardRef<{ refresh: () => void }>(function FileTree(_p
         raw = await readTextFile(noteId);
       } catch {
         // Binary or unreadable file — show placeholder
-        const note = { id: noteId, path: relPath, title, content: `[无法预览此文件: ${title}]` };
+        const note = { id: noteId, path: relPath, title, content: `[无法预览此文件: ${title}]`, tags: [] as string[], aliases: [] as string[], created: "", updated: "" };
         loadNote(noteId, note);
         openTab({ noteId, title, path: relPath });
         return;
@@ -209,14 +208,14 @@ export const FileTree = forwardRef<{ refresh: () => void }>(function FileTree(_p
         }
       }
 
-      const note = { id: noteId, path: relPath, title, content: raw };
+      const note = { id: noteId, path: relPath, title, content: raw, tags: [] as string[], aliases: [] as string[], created: "", updated: "" };
       loadNote(noteId, note);
       openTab({ noteId, title, path: relPath });
     } else {
       // Browser: try API, fallback gracefully for non-note files
       // Binary files (Excel, PDF) — just open, viewer handles loading
       if (isBinary) {
-        const note = { id: noteId, path: relPath, title, content: "" };
+        const note = { id: noteId, path: relPath, title, content: "", tags: [] as string[], aliases: [] as string[], created: "", updated: "" };
         loadNote(noteId, note);
         openTab({ noteId, title, path: relPath });
         return;
@@ -226,7 +225,7 @@ export const FileTree = forwardRef<{ refresh: () => void }>(function FileTree(_p
         loadNote(noteId, note);
         openTab({ noteId, title: note.title, path: note.path });
       } catch {
-        const note = { id: noteId, path: relPath, title, content: `[无法预览此文件: ${title}]` };
+        const note = { id: noteId, path: relPath, title, content: `[无法预览此文件: ${title}]`, tags: [] as string[], aliases: [] as string[], created: "", updated: "" };
         loadNote(noteId, note);
         openTab({ noteId, title, path: relPath });
       }
@@ -247,7 +246,7 @@ export const FileTree = forwardRef<{ refresh: () => void }>(function FileTree(_p
       const title = name;
       const content = "";
       setNotes((prev) => [...prev, { id: filePath, path, title }]);
-      loadNote(filePath, { id: filePath, path, title, content });
+      loadNote(filePath, { id: filePath, path, title, content, tags: [] as string[], aliases: [] as string[], created: now, updated: now });
       openTab({ noteId: filePath, title, path });
       resetWikiLinkCache();
       invalidateCalendarCache();

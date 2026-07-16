@@ -1,6 +1,5 @@
 import { useState, useRef, useCallback, useMemo } from "react";
 import { Bubble, Sender, Conversations, Suggestion } from "@ant-design/x";
-import type { BubbleListRef } from "@ant-design/x";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { api } from "@/lib/api";
 import { FaRobot, FaPlus, FaTrashCan } from "react-icons/fa6";
@@ -40,7 +39,7 @@ export function ChatPanel() {
   ]);
   const [activeKey, setActiveKey] = useState("default");
   const [loading, setLoading] = useState(false);
-  const listRef = useRef<BubbleListRef>(null);
+  const listRef = useRef<any>(null);
   const aiConfig = useSettingsStore((s) => s.aiConfig);
 
   const activeConv = useMemo(
@@ -118,8 +117,8 @@ export function ChatPanel() {
   );
 
   const handleSuggestionClick = useCallback(
-    (item: { label: string; value: string }) => {
-      handleSend(item.value);
+    (value: string) => {
+      handleSend(value);
     },
     [handleSend]
   );
@@ -163,7 +162,7 @@ export function ChatPanel() {
           <span className="text-[11px] font-medium text-zinc-600 dark:text-zinc-400 truncate">
             {activeConv.label}
           </span>
-          {!aiConfig?.apiKey && (
+          {!aiConfig?.api_key_openai && (
             <span className="text-[10px] text-amber-500">未配置 API Key</span>
           )}
           <div className="flex-1" />
@@ -197,9 +196,9 @@ export function ChatPanel() {
         {showWelcome && (
           <div className="px-3 pb-1">
             <Suggestion items={SUGGESTIONS} onSelect={handleSuggestionClick}>
-              {({ label }) => (
+              {(item: any) => (
                 <span className="text-[11px] px-2 py-1 rounded-full border border-zinc-200 dark:border-zinc-700 text-zinc-500 hover:border-accent hover:text-accent cursor-pointer transition-colors">
-                  {label}
+                  {item.label}
                 </span>
               )}
             </Suggestion>
@@ -211,8 +210,8 @@ export function ChatPanel() {
           <Sender
             onSubmit={handleSend}
             loading={loading}
-            placeholder={aiConfig?.apiKey ? "输入消息..." : "请先在设置中配置 API Key"}
-            disabled={!aiConfig?.apiKey}
+            placeholder={aiConfig?.api_key_openai ? "输入消息..." : "请先在设置中配置 API Key"}
+            disabled={!aiConfig?.api_key_openai}
             style={{ borderRadius: 12 }}
           />
         </div>

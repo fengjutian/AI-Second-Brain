@@ -24,7 +24,7 @@ export function SearchPanel() {
   const loadNote = useNoteStore((s) => s.loadNote);
   const openTab = useTabStore((s) => s.openTab);
   const requestIdRef = useRef(0);
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   // Debounce input
   const handleInput = useCallback((value: string) => {
@@ -57,6 +57,7 @@ export function SearchPanel() {
 
     if (isTauri()) {
       const vaultPath = useSettingsStore.getState().vaultPath;
+      if (!vaultPath) return;
       // Rebuild index on first search (cost amortized)
       rebuildIndex(vaultPath).then(() => {
         return searchNotes(vaultPath, q).then((data) => {
@@ -99,7 +100,7 @@ export function SearchPanel() {
       const content = raw.startsWith("---\n")
         ? raw.slice(raw.indexOf("\n---\n", 4) + 5).trimStart()
         : raw;
-      loadNote(result.note_id, { id: result.note_id, path: result.path, title: result.title, content });
+      loadNote(result.note_id, { id: result.note_id, path: result.path, title: result.title, content, tags: [] as string[], aliases: [] as string[], created: "", updated: "" });
       openTab({ noteId: result.note_id, title: result.title, path: result.path });
     } else {
       const note = await api.notes.get(result.note_id);

@@ -2,7 +2,7 @@
  * Local-First Index: SQLite FTS5 search + link extraction, pure client-side.
  * Used in Tauri mode when the Python backend is unavailable.
  */
-import type { Database } from "@tauri-apps/plugin-sql";
+import Database from "@tauri-apps/plugin-sql";
 
 let dbPromise: Promise<Database> | null = null;
 

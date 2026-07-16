@@ -58,7 +58,7 @@ function FileTreePane() {
         const path = `${name}.md`;
         const filePath = `${vaultPath}/${path}`;
         await writeTextFile(filePath, frontmatter);
-        loadNote(filePath, { id: filePath, path, title: name, content: "" });
+        loadNote(filePath, { id: filePath, path, title: name, content: "", tags: [] as string[], aliases: [] as string[], created: now, updated: now });
         openTab({ noteId: filePath, title: name, path });
         fileTreeRef.current?.refresh();
         resetWikiLinkCache();
@@ -91,7 +91,7 @@ function FileTreePane() {
           const content = raw.startsWith("---\n")
             ? raw.slice(raw.indexOf("\n---\n", 4) + 5).trimStart()
             : raw;
-          loadNote(filePath, { id: filePath, path: relPath, title: today, content });
+          loadNote(filePath, { id: filePath, path: relPath, title: today, content, tags: [] as string[], aliases: [] as string[], created: "", updated: "" });
           openTab({ noteId: filePath, title: today, path: relPath });
         } else {
           // Create daily directory if needed
@@ -103,7 +103,7 @@ function FileTreePane() {
           const now = new Date().toISOString();
           const frontmatter = `---\nid: ${noteId}\ntitle: ${today}\ncreated: ${now}\nupdated: ${now}\ntags: ["daily"]\n---\n\n# ${today}\n\n`;
           await writeTextFile(filePath, frontmatter);
-          loadNote(filePath, { id: filePath, path: relPath, title: today, content: `# ${today}\n\n` });
+          loadNote(filePath, { id: filePath, path: relPath, title: today, content: `# ${today}\n\n`, tags: [] as string[], aliases: [] as string[], created: now, updated: now });
           openTab({ noteId: filePath, title: today, path: relPath });
           resetWikiLinkCache();
           invalidateCalendarCache();

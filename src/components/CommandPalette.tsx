@@ -53,7 +53,7 @@ export function CommandPalette({ onClose }: CommandPaletteProps) {
                 ? raw.slice(raw.indexOf("\n---\n", 4) + 5).trimStart()
                 : raw;
               const { useNoteStore } = await import("@/stores/noteStore");
-              useNoteStore.getState().loadNote(filePath, { id: filePath, path: relPath, title: today, content });
+              useNoteStore.getState().loadNote(filePath, { id: filePath, path: relPath, title: today, content, tags: [] as string[], aliases: [] as string[], created: "", updated: "" });
               openTab({ noteId: filePath, title: today, path: relPath });
             } else {
               const dailyDir = `${vaultPath}/daily`;
@@ -63,7 +63,7 @@ export function CommandPalette({ onClose }: CommandPaletteProps) {
               const frontmatter = `---\nid: ${noteId}\ntitle: ${today}\ncreated: ${now}\nupdated: ${now}\ntags: ["daily"]\n---\n\n# ${today}\n\n`;
               await writeTextFile(filePath, frontmatter);
               const { useNoteStore } = await import("@/stores/noteStore");
-              useNoteStore.getState().loadNote(filePath, { id: filePath, path: relPath, title: today, content: `# ${today}\n\n` });
+              useNoteStore.getState().loadNote(filePath, { id: filePath, path: relPath, title: today, content: `# ${today}\n\n`, tags: [] as string[], aliases: [] as string[], created: now, updated: now });
               openTab({ noteId: filePath, title: today, path: relPath });
             }
           } else {
@@ -98,14 +98,15 @@ export function CommandPalette({ onClose }: CommandPaletteProps) {
       action: async () => {
         const { useNoteStore } = await import("@/stores/noteStore");
         const currentId = useNoteStore.getState().currentId;
-        const note = currentId ? (useNoteStore.getState().notes[currentId] ?? null) : null;
+        if (!currentId) return;
+        const note = useNoteStore.getState().notes[currentId] ?? null;
         if (!note) return;
         if (!confirm(`确定删除「${note.title}」？\n\n笔记会被移到 .trash 目录。`)) return;
         try {
           const { api } = await import("@/lib/api");
-          await api.notes.delete(currentId);
+          await api.notes.delete(currentId!);
           useNoteStore.getState().removeNote(currentId);
-          closeTab(currentId);
+          closeTab(currentId!);
         } catch (e) {
           console.error("Delete failed:", e);
         }

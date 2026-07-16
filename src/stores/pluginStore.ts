@@ -86,7 +86,7 @@ export const usePluginStore = create<PluginState>((set, get) => ({
     set({ plugins: [], loaded: false });
 
     // Scan plugins/ directory
-    const pluginsDir = `${vaultPath}/plugins`;
+    // Scan plugins/ directory
     try {
       // In production, we'd scan the directory. For now, load from a list.
       // Plugins are registered via registerCorePlugin() or dynamically.

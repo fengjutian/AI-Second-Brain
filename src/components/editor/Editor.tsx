@@ -26,7 +26,7 @@ import { api } from "@/lib/api";
 import { isTauri } from "@/lib/env";
 import {
   FaBold, FaItalic, FaStrikethrough, FaCode, FaHeading, FaListUl, FaListOl, FaQuoteRight, FaParagraph, FaGripVertical, FaUnderline, FaLink,
-  FaCircleInfo, FaChevronDown, FaTable, FaImage, FaListCheck, FaHighlighter, FaAlignLeft, FaAlignCenter, FaAlignRight,
+  FaCircleInfo, FaTable, FaImage, FaListCheck, FaHighlighter, FaAlignLeft, FaAlignCenter, FaAlignRight,
 } from "react-icons/fa6";
 import { cn, htmlToMarkdown } from "@/lib/utils";
 
@@ -47,7 +47,7 @@ export function Editor({ tabId, noteId }: EditorProps) {
   const setContent = useNoteStore((s) => s.setContent);
   const setDirty = useTabStore((s) => s.setDirty);
   const updateTitle = useTabStore((s) => s.updateTitle);
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const pendingSaveRef = useRef<(() => Promise<void>) | null>(null);
   const saveVersionRef = useRef(0); // prevents dirty-clean flicker during continuous typing
   const noteIdRef = useRef(noteId);
@@ -123,7 +123,7 @@ export function Editor({ tabId, noteId }: EditorProps) {
         class: "tiptap outline-none min-h-full",
       },
       handleDOMEvents: {
-        keydown: (view, event) => {
+        keydown: (_view, event) => {
           if ((event.ctrlKey || event.metaKey) && event.key === "s") {
             event.preventDefault();
             if (saveTimerRef.current) {
@@ -501,7 +501,7 @@ function BubbleBtn({ children, active, onClick, title }: { children: React.React
 }
 
 // ── Slash Overlay ──
-function SlashOverlay({ editor }: { editor: ReturnType<typeof useEditor> }) {
+function SlashOverlay({ editor: _editor }: { editor: ReturnType<typeof useEditor> }) {
   const { visible, items, position, selectedIdx, handleSelect, setIdx } = useSlashMenu();
   if (!visible) return null;
   return <SlashMenu items={items} position={position} selectedIdx={selectedIdx} onSelect={handleSelect} onHover={setIdx} />;

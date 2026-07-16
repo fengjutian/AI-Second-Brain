@@ -93,6 +93,7 @@ export function ExcelViewer({ noteId, path: _path }: ExcelViewerProps) {
 
     const init = async () => {
       try {
+        // @ts-expect-error - handsontable CSS import not typed
         await import("handsontable/dist/handsontable.full.min.css");
         const HandsontableModule = await import("handsontable");
 

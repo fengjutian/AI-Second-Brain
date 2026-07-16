@@ -1,5 +1,5 @@
 import { Excalidraw } from "@excalidraw/excalidraw";
-import type { ExcalidrawElement, AppState, BinaryFiles } from "@excalidraw/excalidraw/types/types";
+import type { ExcalidrawElement, AppState, BinaryFiles } from "@excalidraw/excalidraw";
 import "@excalidraw/excalidraw/index.css";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { isTauri } from "@/lib/env";
@@ -15,7 +15,7 @@ export function ExcalidrawBoard() {
     files: BinaryFiles;
   } | null>(null);
   const [loaded, setLoaded] = useState(false);
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const filePathRef = useRef<string>("");
   const sceneRef = useRef<{ elements: readonly ExcalidrawElement[]; appState: AppState } | null>(null);
   const savingRef = useRef(false);

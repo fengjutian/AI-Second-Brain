@@ -14,7 +14,7 @@ import { useSettingsStore } from "@/stores/settingsStore";
 import { api } from "@/lib/api";
 import { isTauri } from "@/lib/env";
 import { loadRecentVaults, addRecentVault, removeRecentVaultLocal } from "@/lib/vaultsLocal";
-import { useState, useEffect, useRef, lazy, Suspense } from "react";
+import { useState, useEffect, useRef } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { FaChevronDown, FaFolderOpen, FaPlus, FaCheck, FaTrashCan } from "react-icons/fa6";
 import { cn } from "@/lib/utils";

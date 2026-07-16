@@ -9,7 +9,6 @@ import { InputDialog } from "@/components/ui/InputDialog";
 
 // Per-file cache: Map<filename, { elements, appState }>
 const fileCache = new Map<string, any>();
-let vaultKey = "";
 
 export function WhiteboardPanel() {
   const vaultPath = useSettingsStore((s) => s.vaultPath);
@@ -21,7 +20,7 @@ export function WhiteboardPanel() {
   const [initialData, setInitialData] = useState<any>(null);
   const [newDialogOpen, setNewDialogOpen] = useState(false);
 
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const loadedRef = useRef(false);
 
   const savePath = vaultPath && activeFile

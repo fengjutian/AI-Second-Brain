@@ -172,7 +172,7 @@ export const SlashCommand = Extension.create({
             },
           };
         },
-      } as Partial<SuggestionOptions>),
+      } as SuggestionOptions),
     ];
   },
 });

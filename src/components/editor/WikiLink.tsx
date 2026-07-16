@@ -151,7 +151,7 @@ export const wikiLinkSuggestion: Omit<SuggestionOptions<WikiLinkItem>, "editor">
           popup?.hide();
           return true;
         }
-        return component?.ref?.onKeyDown(props) ?? false;
+        return (component?.ref as any)?.onKeyDown(props) ?? false;
       },
 
       onExit() {
