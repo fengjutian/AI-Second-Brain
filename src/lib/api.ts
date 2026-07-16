@@ -34,15 +34,15 @@ export const api = {
   notes: {
     list: (params?: Record<string, string>) =>
       request<any[]>(`/notes?${new URLSearchParams(params || {})}`),
-    get: (id: string) => request<any>(`/notes/${id}`),
+    get: (id: string) => request<any>(`/notes/${encodeURIComponent(id)}`),
     create: (body: { path: string; template?: string }) =>
       request<any>("/notes", { method: "POST", body: JSON.stringify(body) }),
     update: (id: string, body: { content: string }) =>
-      request<any>(`/notes/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+      request<any>(`/notes/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify(body) }),
     delete: (id: string) =>
-      request<void>(`/notes/${id}`, { method: "DELETE" }),
-    outgoingLinks: (id: string) => request<any[]>(`/notes/${id}/links/outgoing`),
-    backlinks: (id: string) => request<any[]>(`/notes/${id}/links/backlinks`),
+      request<void>(`/notes/${encodeURIComponent(id)}`, { method: "DELETE" }),
+    outgoingLinks: (id: string) => request<any[]>(`/notes/${encodeURIComponent(id)}/links/outgoing`),
+    backlinks: (id: string) => request<any[]>(`/notes/${encodeURIComponent(id)}/links/backlinks`),
   },
   search: {
     keyword: (q: string) => request<any[]>(`/search?q=${encodeURIComponent(q)}`),
@@ -61,7 +61,7 @@ export const api = {
   },
   graph: {
     global: () => request<any>("/graph"),
-    local: (id: string, depth = 1) => request<any>(`/graph/${id}/local?depth=${depth}`),
+    local: (id: string, depth = 1) => request<any>(`/graph/${encodeURIComponent(id)}/local?depth=${depth}`),
   },
   calendar: {
     list: (year?: number, month?: number) => {

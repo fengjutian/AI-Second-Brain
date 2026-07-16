@@ -4,7 +4,7 @@ import json
 import asyncio
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
 from core.indexer import scan_vault
@@ -112,9 +112,19 @@ app.add_middleware(
 from fastapi.responses import JSONResponse
 from starlette.requests import Request
 
+@app.exception_handler(HTTPException)
+async def http_exc_handler(request: Request, exc: HTTPException):
+    """Pass through HTTP exceptions with their intended status codes."""
+    from fastapi.responses import JSONResponse as _JSONResponse
+    return _JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+    )
+
+
 @app.exception_handler(Exception)
 async def catch_all_handler(request: Request, exc: Exception):
-    """Ensure CORS headers on all error responses."""
+    """Ensure CORS headers on all unexpected error responses."""
     import traceback
     traceback.print_exception(type(exc), exc, exc.__traceback__)
     detail = str(exc) if os.environ.get("DEBUG") else "Internal server error"

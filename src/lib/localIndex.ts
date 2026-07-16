@@ -54,30 +54,54 @@ async function getDb(vaultPath: string): Promise<Database> {
   return dbPromise;
 }
 
+// ── Frontmatter helpers ──
+
+function parseFrontmatter(content: string): { id?: string; title?: string; body: string } {
+  if (!content.startsWith("---\n")) return { body: content };
+  const end = content.indexOf("\n---\n", 4);
+  if (end === -1) return { body: content };
+  const fmBlock = content.slice(4, end);
+  const body = content.slice(end + 5).trimStart();
+  const idMatch = fmBlock.match(/^id:\s*(.+)$/m);
+  const titleMatch = fmBlock.match(/^title:\s*(.+)$/m);
+  return {
+    id: idMatch ? idMatch[1].replace(/^["']|["']$/g, "") : undefined,
+    title: titleMatch ? titleMatch[1].replace(/^["']|["']$/g, "") : undefined,
+    body,
+  };
+}
+
 // ── Rebuild index from all .md files ──
 
 export async function rebuildIndex(vaultPath: string): Promise<void> {
   const { readDir, readTextFile } = await import("@tauri-apps/plugin-fs");
   const db = await getDb(vaultPath);
 
-  await db.execute("DELETE FROM notes");
-  await db.execute("DELETE FROM notes_fts");
-  await db.execute("DELETE FROM links");
+  // Load existing path→id mapping to preserve IDs across rebuilds
+  const existingRows: any[] = await db.select("SELECT id, path FROM notes");
+  const existingIds = new Map<string, string>();
+  for (const row of existingRows) existingIds.set(row.path, row.id);
 
+  const seenPaths = new Set<string>();
   const notes: NoteEntry[] = [];
-  await scanVault(vaultPath, vaultPath, notes, readDir, readTextFile);
+  await scanVault(vaultPath, vaultPath, notes, existingIds, seenPaths, readDir, readTextFile);
+
+  // Delete notes whose files no longer exist
+  for (const row of existingRows) {
+    if (!seenPaths.has(row.path)) {
+      await db.execute("DELETE FROM notes_fts WHERE rowid = (SELECT rowid FROM notes WHERE id = $1)", [row.id]);
+      await db.execute("DELETE FROM links WHERE source_id = $1 OR target_id = $1", [row.id]);
+      await db.execute("DELETE FROM notes WHERE id = $1", [row.id]);
+    }
+  }
 
   for (const note of notes) {
-    // Strip frontmatter
-    let body = note.content;
-    if (body.startsWith("---\n")) {
-      const end = body.indexOf("\n---\n", 4);
-      if (end !== -1) body = body.slice(end + 5).trimStart();
-    }
+    const { body } = parseFrontmatter(note.content);
 
-    await db.execute("INSERT INTO notes (id, path, title, content) VALUES ($1, $2, $3, $4)", [
-      note.id, note.path, note.title, body,
-    ]);
+    await db.execute(
+      "INSERT OR REPLACE INTO notes (id, path, title, content) VALUES ($1, $2, $3, $4)",
+      [note.id, note.path, note.title, body],
+    );
     await db.execute("INSERT INTO notes_fts (rowid, title, content) VALUES ((SELECT rowid FROM notes WHERE id = $1), $2, $3)", [
       note.id, note.title, body,
     ]);
@@ -103,6 +127,7 @@ export async function rebuildIndex(vaultPath: string): Promise<void> {
 
 async function scanVault(
   dirPath: string, vaultPath: string, results: NoteEntry[],
+  existingIds: Map<string, string>, seenPaths: Set<string>,
   readDir: Function, readTextFile: Function
 ): Promise<void> {
   const entries = await readDir(dirPath);
@@ -110,12 +135,17 @@ async function scanVault(
     if (entry.name.startsWith(".") || entry.name === ".trash") continue;
     const fullPath = `${dirPath}/${entry.name}`;
     if (entry.isDirectory) {
-      await scanVault(fullPath, vaultPath, results, readDir, readTextFile);
+      await scanVault(fullPath, vaultPath, results, existingIds, seenPaths, readDir, readTextFile);
     } else if (entry.name.endsWith(".md")) {
       const relPath = fullPath.slice(vaultPath.length + 1);
-      const title = entry.name.replace(/\.md$/, "");
+      seenPaths.add(relPath);
+      const fileName = entry.name.replace(/\.md$/, "");
       const content = await readTextFile(fullPath);
-      results.push({ id: fullPath, path: relPath, title, content });
+      const { id: fmId, title: fmTitle } = parseFrontmatter(content);
+      // Prefer existing DB id, then frontmatter id, then generate new UUID
+      const noteId = existingIds.get(relPath) || fmId || crypto.randomUUID();
+      const title = fmTitle || fileName;
+      results.push({ id: noteId, path: relPath, title, content });
     }
   }
 }
