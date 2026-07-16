@@ -33,6 +33,7 @@ export function HoverPreview({ target, position, onMouseEnter, onMouseLeave }: H
 
         if (isTauri()) {
           const vaultPath = useSettingsStore.getState().vaultPath;
+          if (!vaultPath) return;
           const results = await searchNotes(vaultPath, target!);
           match = results.find(
             (r: any) => r.title.toLowerCase() === target.toLowerCase()

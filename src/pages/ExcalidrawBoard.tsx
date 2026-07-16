@@ -1,5 +1,6 @@
 import { Excalidraw } from "@excalidraw/excalidraw";
-import type { ExcalidrawElement, AppState, BinaryFiles } from "@excalidraw/excalidraw";
+import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
+import type { AppState, BinaryFiles } from "@excalidraw/excalidraw/types";
 import "@excalidraw/excalidraw/index.css";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { isTauri } from "@/lib/env";

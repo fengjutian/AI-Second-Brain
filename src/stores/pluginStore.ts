@@ -78,7 +78,7 @@ export const usePluginStore = create<PluginState>((set, get) => ({
     set((s) => ({ plugins: [...s.plugins, entry] }));
   },
 
-  loadPlugins: async (vaultPath) => {
+  loadPlugins: async (_vaultPath) => {
     // Clear previous
     await get().deactivateAll();
     clearPluginState();
