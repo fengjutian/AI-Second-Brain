@@ -128,7 +128,7 @@ export const wikiLinkSuggestion: Omit<SuggestionOptions<WikiLinkItem>, "editor">
           editor: props.editor,
         });
 
-        popup = tippy("body", {
+        popup = tippy(document.body, {
           getReferenceClientRect: () => props.clientRect?.() || new DOMRect(),
           appendTo: () => document.body,
           content: component.element,

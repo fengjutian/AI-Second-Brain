@@ -29,6 +29,7 @@ export function ExcelViewer({ noteId, path: _path }: ExcelViewerProps) {
   const [loading, setLoading] = useState(true);
   const [hotReady, setHotReady] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const hotContainerRef = useRef<HTMLDivElement>(null);
   const hotRef = useRef<any>(null);
 
   // Load workbook and parse all sheets
@@ -100,8 +101,7 @@ export function ExcelViewer({ noteId, path: _path }: ExcelViewerProps) {
         if (cancelled) return;
 
         const Handsontable = HandsontableModule.default;
-        const container = containerRef.current!;
-        container.innerHTML = "";
+        const container = hotContainerRef.current!;
 
         hotRef.current = new Handsontable(container, {
           data: sheetsData[activeSheet],
@@ -178,13 +178,14 @@ export function ExcelViewer({ noteId, path: _path }: ExcelViewerProps) {
           ))}
         </div>
       )}
-      {/* Handsontable container — always rendered so the ref is attached before init */}
-      <div className="flex-1 w-full overflow-hidden" ref={containerRef}>
+      {/* Handsontable container — separate from React-managed spinner */}
+      <div className="flex-1 w-full overflow-hidden relative" ref={containerRef}>
         {(loading || !hotReady) && (
-          <div className="h-full flex items-center justify-center text-zinc-400">
+          <div className="absolute inset-0 flex items-center justify-center text-zinc-400 bg-white dark:bg-zinc-900">
             <FaSpinner className="animate-spin text-2xl" />
           </div>
         )}
+        <div ref={hotContainerRef} className="h-full w-full" />
       </div>
     </div>
   );
