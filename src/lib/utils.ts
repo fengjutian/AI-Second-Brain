@@ -4,7 +4,7 @@ export function cn(...inputs: ClassValue[]) {
   return clsx(inputs);
 }
 
-/** Convert TipTap's HTML output to Markdown. Handles common block/inline formatting. */
+/** @deprecated Use editor.getMarkdown() from `@tiptap/markdown` instead. */
 export function htmlToMarkdown(html: string): string {
   let md = html;
 

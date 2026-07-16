@@ -28,9 +28,41 @@ import {
   FaBold, FaItalic, FaStrikethrough, FaCode, FaHeading, FaListUl, FaListOl, FaQuoteRight, FaParagraph, FaGripVertical, FaUnderline, FaLink,
   FaCircleInfo, FaTable, FaImage, FaListCheck, FaHighlighter, FaAlignLeft, FaAlignCenter, FaAlignRight,
 } from "react-icons/fa6";
-import { cn, htmlToMarkdown } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { Markdown } from "@tiptap/markdown";
 
-const WikiLink = Mention.configure({
+const WikiLink = Mention.extend({
+  renderText: ({ node }) => `[[${node.attrs.label ?? node.attrs.id}]]`,
+  renderHTML: ({ node }) => [
+    "span",
+    { "data-type": "mention", "data-id": node.attrs.id, class: "wiki-link" },
+    `[[${node.attrs.label ?? node.attrs.id}]]`,
+  ],
+  renderMarkdown: ({ node }) => `[[${node.attrs.label ?? node.attrs.id}]]`,
+  markdownTokenizer: {
+    name: "wikiLink",
+    level: "inline",
+    start: "[[",
+    tokenize(src: string) {
+      const match = /^\[\[([^\]]+?)\]\]/.exec(src);
+      if (match) {
+        return {
+          type: "wikiLink",
+          raw: match[0],
+          text: match[1],
+        };
+      }
+      return undefined;
+    },
+  },
+  parseMarkdown: (token: { text?: string; raw?: string }) => {
+    const label = token.text || token.raw?.slice(2, -2) || "";
+    return {
+      type: "mention",
+      attrs: { id: label, label },
+    };
+  },
+}).configure({
   suggestion: wikiLinkSuggestion,
   HTMLAttributes: {
     class: "wiki-link",
@@ -115,6 +147,7 @@ export function Editor({ tabId, noteId }: EditorProps) {
       }),
       Typography,
       CharacterCount,
+      Markdown,
     ],
     content: note?.content || "",
     autofocus: false,
@@ -150,7 +183,7 @@ export function Editor({ tabId, noteId }: EditorProps) {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
       pendingSaveRef.current = async () => {
         try {
-          const md = htmlToMarkdown(html);
+          const md = editor.getMarkdown();
           if (isTauri()) {
             const { readTextFile, writeTextFile } = await import("@tauri-apps/plugin-fs");
             const raw = await readTextFile(nid);
