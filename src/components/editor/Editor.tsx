@@ -150,6 +150,7 @@ export function Editor({ tabId, noteId }: EditorProps) {
       Markdown,
     ],
     content: note?.content || "",
+    contentType: "markdown",
     autofocus: false,
     editorProps: {
       attributes: {
@@ -172,10 +173,10 @@ export function Editor({ tabId, noteId }: EditorProps) {
       },
     },
     onUpdate: ({ editor }) => {
-      const html = editor.getHTML();
+      const md = editor.getMarkdown();
       const nid = noteIdRef.current;
       const tid = tabIdRef.current;
-      setContent(nid, html);
+      setContent(nid, md);
       setDirty(tid, true);
       saveVersionRef.current++;
       const myVersion = saveVersionRef.current;
@@ -183,7 +184,6 @@ export function Editor({ tabId, noteId }: EditorProps) {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
       pendingSaveRef.current = async () => {
         try {
-          const md = editor.getMarkdown();
           if (isTauri()) {
             const { readTextFile, writeTextFile } = await import("@tauri-apps/plugin-fs");
             const raw = await readTextFile(nid);
@@ -215,9 +215,8 @@ export function Editor({ tabId, noteId }: EditorProps) {
 
   useEffect(() => {
     if (editor && note) {
-      const currentContent = editor.getHTML();
-      if (currentContent !== note.content) {
-        editor.commands.setContent(note.content);
+      if (editor.getMarkdown() !== note.content) {
+        editor.commands.setContent(note.content, { contentType: "markdown" });
       }
     }
   }, [noteId, editor]);
