@@ -96,12 +96,14 @@ export function SearchPanel() {
   const handleOpen = async (result: SearchResult) => {
     if (isTauri()) {
       const { readTextFile } = await import("@tauri-apps/plugin-fs");
-      const raw = await readTextFile(result.note_id);
+      const vaultPath = useSettingsStore.getState().vaultPath;
+      const filePath = `${vaultPath}/${result.path}`;
+      const raw = await readTextFile(filePath);
       const content = raw.startsWith("---\n")
         ? raw.slice(raw.indexOf("\n---\n", 4) + 5).trimStart()
         : raw;
-      loadNote(result.note_id, { id: result.note_id, path: result.path, title: result.title, content, tags: [] as string[], aliases: [] as string[], created: "", updated: "" });
-      openTab({ noteId: result.note_id, title: result.title, path: result.path });
+      loadNote(filePath, { id: filePath, path: result.path, title: result.title, content, tags: [] as string[], aliases: [] as string[], created: "", updated: "" });
+      openTab({ noteId: filePath, title: result.title, path: result.path });
     } else {
       const note = await api.notes.get(result.note_id);
       loadNote(result.note_id, note);
