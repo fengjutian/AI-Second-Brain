@@ -1,5 +1,6 @@
 import { useEditor, EditorContent } from "@tiptap/react";
 import { BubbleMenu, FloatingMenu } from "@tiptap/react/menus";
+import { TrackChangesExtension, getPendingChangeCount } from "tiptap-track-changes";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Mention from "@tiptap/extension-mention";
@@ -27,7 +28,7 @@ import { isTauri } from "@/lib/env";
 import {
   FaBold, FaItalic, FaStrikethrough, FaCode, FaHeading, FaListUl, FaListOl, FaQuoteRight, FaParagraph, FaGripVertical,
   FaCircleInfo, FaTable, FaImage, FaListCheck, FaHighlighter, FaAlignLeft, FaAlignCenter, FaAlignRight,
-  FaRulerHorizontal,
+  FaRulerHorizontal, FaCheck, FaXmark, FaEye,
 } from "react-icons/fa6";
 import { cn } from "@/lib/utils";
 import { Markdown } from "@tiptap/markdown";
@@ -88,6 +89,7 @@ export function Editor({ tabId, noteId }: EditorProps) {
   noteIdRef.current = noteId;
   tabIdRef.current = tabId;
   const [showMeta, setShowMeta] = useState(false);
+  const [trackMode, setTrackMode] = useState<"edit" | "suggest" | "view">("edit");
   const [hoverTarget, setHoverTarget] = useState<string | null>(null);
   const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null);
   const previewHoveredRef = useRef(false);
@@ -149,6 +151,17 @@ export function Editor({ tabId, noteId }: EditorProps) {
       Typography,
       CharacterCount,
       Markdown,
+      TrackChangesExtension.configure({
+        author: {
+          id: "me",
+          name: "Me",
+          color: "#2563eb",
+        },
+        mode: trackMode,
+        onStatusChange: (_changeId, _status) => {
+          // Could log or update UI
+        },
+      }),
     ],
     content: note?.content || "",
     contentType: "markdown",
@@ -252,6 +265,27 @@ export function Editor({ tabId, noteId }: EditorProps) {
     return () => window.removeEventListener("editor:format", handler);
   }, [editor]);
 
+  // Sync track mode to editor
+  useEffect(() => {
+    if (editor) {
+      (editor.commands as any).setTrackChangesMode(trackMode);
+    }
+  }, [trackMode, editor]);
+
+  // Track pending change count
+  const [pendingCount, setPendingCount] = useState(0);
+  useEffect(() => {
+    if (!editor) return;
+    const update = () => setPendingCount(getPendingChangeCount(editor));
+    editor.on("transaction", update);
+    editor.on("update", update);
+    update();
+    return () => {
+      editor.off("transaction", update);
+      editor.off("update", update);
+    };
+  }, [editor]);
+
   const handleTitleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       updateTitle(tabId, e.target.value);
@@ -297,6 +331,30 @@ export function Editor({ tabId, noteId }: EditorProps) {
               if (url) editor.chain().focus().setImage({ src: url }).run();
             }} title="插入图片"><FaImage size={14} /></ToolbarBtn>
             <ToolbarBtn active={false} onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} title="插入表格"><FaTable size={14} /></ToolbarBtn>
+            {/* Track changes controls */}
+            <div className="flex-1" />
+            <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-700 mx-0.5" />
+            <button
+              type="button"
+              onClick={() => setTrackMode(trackMode === "edit" ? "suggest" : trackMode === "suggest" ? "view" : "edit")}
+              title={`模式: ${trackMode === "edit" ? "编辑" : trackMode === "suggest" ? "建议" : "审阅"}`}
+              className={cn(
+                "flex items-center gap-1 px-1.5 py-1 rounded text-xs transition-colors",
+                trackMode === "suggest" ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400" :
+                trackMode === "view" ? "bg-zinc-200 dark:bg-zinc-600 text-zinc-600 dark:text-zinc-300" :
+                "text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 hover:text-zinc-600 dark:hover:text-zinc-300"
+              )}
+            >
+              {trackMode === "suggest" ? <FaEye size={12} /> : trackMode === "view" ? <FaEye size={12} /> : <FaEye size={12} />}
+              {trackMode === "edit" ? "编辑" : trackMode === "suggest" ? "建议" : "审阅"}
+            </button>
+            {pendingCount > 0 && (
+              <>
+                <ToolbarBtn active={false} onClick={() => (editor.commands as any).acceptAll()} title={`全部接受 (${pendingCount})`}><FaCheck size={14} /></ToolbarBtn>
+                <ToolbarBtn active={false} onClick={() => (editor.commands as any).rejectAll()} title={`全部拒绝 (${pendingCount})`}><FaXmark size={14} /></ToolbarBtn>
+                <span className="text-[10px] text-zinc-400 ml-0.5">{pendingCount}</span>
+              </>
+            )}
           </div>
         )}
 
