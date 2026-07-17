@@ -1,5 +1,5 @@
 import { forwardRef, useImperativeHandle, useEffect, useState, useMemo, memo, useCallback, useRef } from "react";
-import { FaFile, FaFolder, FaFolderOpen, FaChevronRight, FaChevronDown, FaTrashCan } from "react-icons/fa6";
+import { FaFile, FaFolder, FaFolderOpen, FaChevronRight, FaChevronDown, FaTrashCan, FaFilePdf, FaFileExcel, FaFileImage, FaFileCode, FaFileLines, FaDiagramProject } from "react-icons/fa6";
 import { api } from "@/lib/api";
 import { isTauri } from "@/lib/env";
 import { useTabStore } from "@/stores/tabStore";
@@ -14,6 +14,38 @@ interface TreeNode {
   path: string;
   isDir: boolean;
   children: TreeNode[];
+}
+
+/** Map a filename to its file-type icon and color. */
+function getFileIcon(name: string): { icon: typeof FaFile; color: string } {
+  const lower = name.toLowerCase();
+  const ext = name.split(".").pop()?.toLowerCase() || "";
+
+  // Markdown
+  if (ext === "md" || ext === "mdx") return { icon: FaFileLines, color: "text-blue-600 dark:text-blue-400" };
+
+  // PDF
+  if (ext === "pdf") return { icon: FaFilePdf, color: "text-red-500 dark:text-red-400" };
+
+  // Excel / CSV / TSV
+  if (/^(xlsx|xls|xlsm|csv|tsv)$/.test(ext)) return { icon: FaFileExcel, color: "text-green-600 dark:text-green-400" };
+
+  // Images
+  if (/^(png|jpe?g|gif|svg|webp|bmp|ico)$/.test(ext)) return { icon: FaFileImage, color: "text-emerald-500 dark:text-emerald-400" };
+
+  // Code / config / text files
+  if (/^(js|jsx|ts|tsx|py|rs|go|java|rb|php|c|cpp|h|hpp|swift|kt|scala|r|lua|sh|bash|zsh|fish|ps1|bat|cmd|sql|html|css|scss|less|vue|svelte|astro|json|yaml|yml|xml|toml|cfg|ini|conf|env|graphql|txt|log)$/.test(ext))
+    return { icon: FaFileCode, color: "text-amber-500 dark:text-amber-400" };
+
+  // Special filenames (no extension)
+  if (lower === "makefile" || lower === "dockerfile")
+    return { icon: FaFileCode, color: "text-amber-500 dark:text-amber-400" };
+
+  // VSDX / Visio
+  if (/^(vsdx|vsd|vss|vst|vdx)$/.test(ext)) return { icon: FaDiagramProject, color: "text-purple-400 dark:text-purple-300" };
+
+  // Default
+  return { icon: FaFile, color: "text-blue-700 dark:text-blue-400" };
 }
 
 function buildTree(notes: { path: string; title: string; id: string }[]): TreeNode[] {
@@ -369,6 +401,7 @@ const TreeNodeItem = memo(function TreeNodeItem({
 
   // File node
   const note = notes.find((n) => n.path === node.path);
+  const { icon: FileIcon, color: fileColor } = getFileIcon(node.name);
   return (
     <div className="group flex items-center">
       <button
@@ -376,7 +409,7 @@ const TreeNodeItem = memo(function TreeNodeItem({
         style={{ paddingLeft: `${depth * 12 + 4}px` }}
         onClick={() => note && onOpen(note.id, node.path)}
       >
-        <FaFile size={12} className="shrink-0 text-blue-700 dark:text-blue-400" />
+        <FileIcon size={12} className={`shrink-0 ${fileColor}`} />
         <span className="truncate">{node.name}</span>
       </button>
       {/* Delete button — visible on hover */}

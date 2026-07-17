@@ -8,8 +8,21 @@ export interface AiConfig {
   llm_provider: string;
   llm_model: string | null;
   api_key_openai: string;
+  api_key_deepseek: string;
   ollama_base_url: string;
+  deepseek_base_url: string;
 }
+
+export const DEFAULT_AI_CONFIG: AiConfig = {
+  embedding_provider: "local",
+  embedding_model: null,
+  llm_provider: "local",
+  llm_model: null,
+  api_key_openai: "",
+  api_key_deepseek: "",
+  ollama_base_url: "http://localhost:11434/v1",
+  deepseek_base_url: "https://api.deepseek.com/v1",
+};
 
 export interface RecentVault {
   path: string;
@@ -22,7 +35,7 @@ interface SettingsState {
   vaultPath: string | null;
   vaultName: string | null;
   recentVaults: RecentVault[];
-  aiConfig: AiConfig | null;
+  aiConfig: AiConfig;
   aiConfigLoading: boolean;
   offlineMode: boolean;
   setTheme: (t: Theme) => void;
@@ -39,7 +52,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   vaultPath: null,
   vaultName: null,
   recentVaults: [],
-  aiConfig: null,
+  aiConfig: DEFAULT_AI_CONFIG,
   aiConfigLoading: false,
   offlineMode: localStorage.getItem("offlineMode") === "true",
   setTheme: (theme) => {

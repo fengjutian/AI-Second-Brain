@@ -18,7 +18,9 @@ DEFAULT_AI_CONFIG: dict = {
     "llm_provider": "local",
     "llm_model": None,
     "api_key_openai": "",
+    "api_key_deepseek": "",
     "ollama_base_url": "http://localhost:11434/v1",
+    "deepseek_base_url": "https://api.deepseek.com/v1",
 }
 
 

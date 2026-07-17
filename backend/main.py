@@ -221,7 +221,17 @@ async def open_vault(data: dict):
         llm_model = ai_cfg.get("llm_model") or None
 
         emb_engine = EmbeddingEngine(path, provider=emb_provider, model_name=emb_model)
-        rag_engine = RAGEngine(emb_engine, llm_provider=llm_provider, llm_model=llm_model, base_url=ai_cfg.get("ollama_base_url") or None)
+        # Build LLM base_url and api_key based on provider
+        if llm_provider == "deepseek":
+            llm_base_url = ai_cfg.get("deepseek_base_url") or None
+            llm_api_key = ai_cfg.get("api_key_deepseek") or None
+        elif llm_provider == "openai":
+            llm_base_url = None
+            llm_api_key = ai_cfg.get("api_key_openai") or None
+        else:
+            llm_base_url = ai_cfg.get("ollama_base_url") or None
+            llm_api_key = None
+        rag_engine = RAGEngine(emb_engine, llm_provider=llm_provider, llm_model=llm_model, base_url=llm_base_url, api_key=llm_api_key)
         shared.set_embedding_engine(emb_engine)
         shared.set_rag_engine(rag_engine)
         print(f"[startup] AI engines ready — embeddings: {emb_engine.provider}/{emb_engine.model_name}, LLM: {rag_engine.llm_provider}/{rag_engine.llm_model}")

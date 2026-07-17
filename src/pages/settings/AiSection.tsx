@@ -1,5 +1,5 @@
 import { FaSpinner } from "react-icons/fa6";
-import { useSettingsStore, type AiConfig } from "@/stores/settingsStore";
+import { useSettingsStore, DEFAULT_AI_CONFIG, type AiConfig } from "@/stores/settingsStore";
 import { api } from "@/lib/api";
 import { useState, useEffect, useCallback } from "react";
 
@@ -16,7 +16,10 @@ export function AiSection() {
     api.config.ai
       .get()
       .then((cfg) => setAiConfig(cfg))
-      .catch(() => {})
+      .catch(() => {
+        // API unavailable — use local defaults
+        setAiConfig(DEFAULT_AI_CONFIG);
+      })
       .finally(() => setLoading(false));
   }, [setAiConfig, setLoading]);
 
@@ -92,6 +95,7 @@ export function AiSection() {
             >
               <option value="local">local (Ollama)</option>
               <option value="openai">OpenAI</option>
+              <option value="deepseek">DeepSeek</option>
             </select>
           </label>
           <label className="block">
@@ -106,7 +110,11 @@ export function AiSection() {
                 setAiConfig({ ...aiConfig, llm_model: v || null });
               }}
               onBlur={() => handleSave({ llm_model: aiConfig.llm_model })}
-              placeholder={aiConfig.llm_provider === "local" ? "qwen2.5:7b" : "gpt-4o-mini"}
+              placeholder={
+                aiConfig.llm_provider === "local" ? "qwen2.5:7b" :
+                aiConfig.llm_provider === "deepseek" ? "deepseek-chat" :
+                "gpt-4o-mini"
+              }
               className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm"
             />
           </label>
@@ -123,24 +131,57 @@ export function AiSection() {
               />
             </label>
           )}
+          {aiConfig.llm_provider === "deepseek" && (
+            <label className="block">
+              <span className="text-xs text-zinc-500 mb-1 block">DeepSeek 地址</span>
+              <input
+                type="text"
+                value={aiConfig.deepseek_base_url}
+                onChange={(e) => setAiConfig({ ...aiConfig, deepseek_base_url: e.target.value })}
+                onBlur={() => handleSave({ deepseek_base_url: aiConfig.deepseek_base_url })}
+                placeholder="https://api.deepseek.com/v1"
+                className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm"
+              />
+            </label>
+          )}
         </div>
       </section>
 
       <section>
         <h3 className="text-sm font-medium mb-3">API Key</h3>
-        <label className="block">
-          <span className="text-xs text-zinc-500 mb-1 block">
-            OpenAI API Key <span className="text-zinc-400">（使用 OpenAI 时必填）</span>
-          </span>
-          <input
-            type="password"
-            value={aiConfig.api_key_openai}
-            onChange={(e) => setAiConfig({ ...aiConfig, api_key_openai: e.target.value })}
-            onBlur={() => handleSave({ api_key_openai: aiConfig.api_key_openai })}
-            placeholder="sk-..."
-            className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm font-mono"
-          />
-        </label>
+        {aiConfig.llm_provider === "local" && (
+          <p className="text-xs text-zinc-400">本地模型无需 API Key</p>
+        )}
+        {aiConfig.llm_provider === "openai" && (
+          <label className="block">
+            <span className="text-xs text-zinc-500 mb-1 block">
+              OpenAI API Key <span className="text-zinc-400">（必填）</span>
+            </span>
+            <input
+              type="password"
+              value={aiConfig.api_key_openai}
+              onChange={(e) => setAiConfig({ ...aiConfig, api_key_openai: e.target.value })}
+              onBlur={() => handleSave({ api_key_openai: aiConfig.api_key_openai })}
+              placeholder="sk-..."
+              className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm font-mono"
+            />
+          </label>
+        )}
+        {aiConfig.llm_provider === "deepseek" && (
+          <label className="block">
+            <span className="text-xs text-zinc-500 mb-1 block">
+              DeepSeek API Key <span className="text-zinc-400">（必填）</span>
+            </span>
+            <input
+              type="password"
+              value={aiConfig.api_key_deepseek}
+              onChange={(e) => setAiConfig({ ...aiConfig, api_key_deepseek: e.target.value })}
+              onBlur={() => handleSave({ api_key_deepseek: aiConfig.api_key_deepseek })}
+              placeholder="sk-..."
+              className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm font-mono"
+            />
+          </label>
+        )}
       </section>
 
       <div className="flex items-center gap-2 text-sm">

@@ -17,19 +17,23 @@ class RAGEngine:
     def __init__(
         self,
         embeddings_engine: EmbeddingEngine,
-        llm_provider: str = "local",    # "local" (Ollama) | "openai"
+        llm_provider: str = "local",    # "local" (Ollama) | "openai" | "deepseek"
         llm_model: str = None,
-        base_url: str = None,           # override Ollama endpoint
+        base_url: str = None,           # override Ollama/DeepSeek endpoint
+        api_key: str = None,            # API key for OpenAI / DeepSeek
     ):
         self.embeddings = embeddings_engine
         self.llm_provider = llm_provider
         self.llm_model = llm_model or self._default_llm()
         self._base_url = base_url
+        self._api_key = api_key
         self._llm_client = None
 
     def _default_llm(self) -> str:
         if self.llm_provider == "local":
             return "qwen2.5:7b"  # Ollama default
+        if self.llm_provider == "deepseek":
+            return "deepseek-chat"
         return "gpt-4o-mini"
 
     def _get_llm_client(self):
@@ -39,7 +43,18 @@ class RAGEngine:
         if self.llm_provider == "openai":
             if not HAS_OPENAI:
                 raise RuntimeError("openai not installed")
-            self._llm_client = AsyncOpenAI()
+            self._llm_client = AsyncOpenAI(api_key=self._api_key or os.environ.get("OPENAI_API_KEY"))
+        elif self.llm_provider == "deepseek":
+            if not HAS_OPENAI:
+                raise RuntimeError("openai not installed (needed for DeepSeek client)")
+            url = self._base_url or os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1")
+            key = self._api_key or os.environ.get("DEEPSEEK_API_KEY", "")
+            if not key:
+                raise RuntimeError("DeepSeek API key not configured")
+            self._llm_client = AsyncOpenAI(
+                base_url=url,
+                api_key=key,
+            )
         elif self.llm_provider == "local":
             # Ollama — use OpenAI-compatible endpoint
             if not HAS_OPENAI:
