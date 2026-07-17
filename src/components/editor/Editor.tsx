@@ -1,5 +1,5 @@
 import { useEditor, EditorContent } from "@tiptap/react";
-import { BubbleMenu } from "@tiptap/react/menus";
+import { BubbleMenu, FloatingMenu } from "@tiptap/react/menus";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Mention from "@tiptap/extension-mention";
@@ -25,8 +25,9 @@ import { useSlashMenu, SlashMenu } from "@/components/editor/SlashMenu";
 import { api } from "@/lib/api";
 import { isTauri } from "@/lib/env";
 import {
-  FaBold, FaItalic, FaStrikethrough, FaCode, FaHeading, FaListUl, FaListOl, FaQuoteRight, FaParagraph, FaGripVertical, FaUnderline, FaLink,
+  FaBold, FaItalic, FaStrikethrough, FaCode, FaHeading, FaListUl, FaListOl, FaQuoteRight, FaParagraph, FaGripVertical,
   FaCircleInfo, FaTable, FaImage, FaListCheck, FaHighlighter, FaAlignLeft, FaAlignCenter, FaAlignRight,
+  FaRulerHorizontal,
 } from "react-icons/fa6";
 import { cn } from "@/lib/utils";
 import { Markdown } from "@tiptap/markdown";
@@ -263,6 +264,42 @@ export function Editor({ tabId, noteId }: EditorProps) {
   return (
     <div className="h-full overflow-y-auto relative">
       <div className="max-w-3xl mx-auto py-8 px-4">
+        {/* Fixed toolbar */}
+        {editor && (
+          <div className="flex items-center gap-0.5 mb-4 px-1 py-0.5 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-lg">
+            {/* Block types */}
+            <ToolbarBtn active={editor.isActive("heading", { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} title="标题1"><FaHeading size={14} /></ToolbarBtn>
+            <ToolbarBtn active={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} title="标题2"><FaHeading size={14} /></ToolbarBtn>
+            <ToolbarBtn active={editor.isActive("heading", { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} title="标题3"><FaHeading size={14} /></ToolbarBtn>
+            <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-700 mx-0.5" />
+            {/* Inline marks */}
+            <ToolbarBtn active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()} title="加粗"><FaBold size={14} /></ToolbarBtn>
+            <ToolbarBtn active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()} title="斜体"><FaItalic size={14} /></ToolbarBtn>
+            <ToolbarBtn active={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()} title="删除线"><FaStrikethrough size={14} /></ToolbarBtn>
+            <ToolbarBtn active={editor.isActive("code")} onClick={() => editor.chain().focus().toggleCode().run()} title="行内代码"><FaCode size={14} /></ToolbarBtn>
+            <ToolbarBtn active={editor.isActive("highlight")} onClick={() => editor.chain().focus().toggleHighlight().run()} title="高亮"><FaHighlighter size={14} /></ToolbarBtn>
+            <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-700 mx-0.5" />
+            {/* Lists & quote */}
+            <ToolbarBtn active={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()} title="无序列表"><FaListUl size={14} /></ToolbarBtn>
+            <ToolbarBtn active={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()} title="有序列表"><FaListOl size={14} /></ToolbarBtn>
+            <ToolbarBtn active={editor.isActive("taskList")} onClick={() => editor.chain().focus().toggleTaskList().run()} title="任务列表"><FaListCheck size={14} /></ToolbarBtn>
+            <ToolbarBtn active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()} title="引用"><FaQuoteRight size={14} /></ToolbarBtn>
+            <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-700 mx-0.5" />
+            {/* Alignment */}
+            <ToolbarBtn active={editor.isActive({ textAlign: "left" })} onClick={() => editor.chain().focus().setTextAlign("left").run()} title="左对齐"><FaAlignLeft size={14} /></ToolbarBtn>
+            <ToolbarBtn active={editor.isActive({ textAlign: "center" })} onClick={() => editor.chain().focus().setTextAlign("center").run()} title="居中"><FaAlignCenter size={14} /></ToolbarBtn>
+            <ToolbarBtn active={editor.isActive({ textAlign: "right" })} onClick={() => editor.chain().focus().setTextAlign("right").run()} title="右对齐"><FaAlignRight size={14} /></ToolbarBtn>
+            <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-700 mx-0.5" />
+            {/* Insert */}
+            <ToolbarBtn active={false} onClick={() => editor.chain().focus().setHorizontalRule().run()} title="分隔线"><FaRulerHorizontal size={14} /></ToolbarBtn>
+            <ToolbarBtn active={false} onClick={() => {
+              const url = window.prompt("图片地址", "https://");
+              if (url) editor.chain().focus().setImage({ src: url }).run();
+            }} title="插入图片"><FaImage size={14} /></ToolbarBtn>
+            <ToolbarBtn active={false} onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} title="插入表格"><FaTable size={14} /></ToolbarBtn>
+          </div>
+        )}
+
         <div className="flex items-start gap-2 mb-4">
           <input
             type="text"
@@ -304,53 +341,52 @@ export function Editor({ tabId, noteId }: EditorProps) {
           {/* Notion-style block handle */}
           <BlockHandle editor={editor} />
 
-          {/* Bubble menu on text selection */}
+          {/* Bubble menu on text selection — same buttons as FloatingMenu */}
           {editor && (
             <BubbleMenu
               editor={editor}
-              className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-xl p-1 space-y-1"
+              className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-xl p-1 flex items-center gap-0.5"
             >
-              {/* Inline marks */}
-              <div className="flex items-center gap-0.5">
-                <BubbleBtn active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()} title="加粗"><FaBold size={15} /></BubbleBtn>
-                <BubbleBtn active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()} title="斜体"><FaItalic size={15} /></BubbleBtn>
-                <BubbleBtn active={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()} title="删除线"><FaStrikethrough size={15} /></BubbleBtn>
-                <BubbleBtn active={editor.isActive("code")} onClick={() => editor.chain().focus().toggleCode().run()} title="行内代码"><FaCode size={15} /></BubbleBtn>
-                <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-700 mx-0.5" />
-                <BubbleBtn active={editor.isActive("link")} onClick={() => {
-                  const prev = editor.getAttributes("link").href;
-                  const url = window.prompt("链接地址", prev || "https://");
-                  if (url === null) return;
-                  if (url === "") { editor.chain().focus().unsetLink().run(); return; }
-                  editor.chain().focus().setLink({ href: url }).run();
-                }} title="链接"><FaLink size={15} /></BubbleBtn>
-                <BubbleBtn active={editor.isActive("highlight")} onClick={() => editor.chain().focus().toggleHighlight().run()} title="高亮"><FaHighlighter size={15} /></BubbleBtn>
-                <BubbleBtn active={false} onClick={() => editor.chain().focus().unsetAllMarks().clearNodes().run()} title="清除格式"><FaUnderline size={15} /></BubbleBtn>
-              </div>
-              {/* Block type */}
-              <div className="flex items-center gap-0.5 border-t border-zinc-100 dark:border-zinc-800 pt-1">
-                <BubbleBtn active={editor.isActive("heading", { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} title="标题1"><FaHeading size={15} /></BubbleBtn>
-                <BubbleBtn active={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} title="标题2"><FaHeading size={15} /></BubbleBtn>
-                <BubbleBtn active={editor.isActive("heading", { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} title="标题3"><FaHeading size={15} /></BubbleBtn>
-                <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-700 mx-0.5" />
-                <BubbleBtn active={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()} title="无序列表"><FaListUl size={15} /></BubbleBtn>
-                <BubbleBtn active={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()} title="有序列表"><FaListOl size={15} /></BubbleBtn>
-                <BubbleBtn active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()} title="引用"><FaQuoteRight size={15} /></BubbleBtn>
-                <BubbleBtn active={editor.isActive("taskList")} onClick={() => editor.chain().focus().toggleTaskList().run()} title="任务列表"><FaListCheck size={15} /></BubbleBtn>
-              </div>
-              {/* Alignment & Insert */}
-              <div className="flex items-center gap-0.5 border-t border-zinc-100 dark:border-zinc-800 pt-1">
-                <BubbleBtn active={editor.isActive({ textAlign: "left" })} onClick={() => editor.chain().focus().setTextAlign("left").run()} title="左对齐"><FaAlignLeft size={15} /></BubbleBtn>
-                <BubbleBtn active={editor.isActive({ textAlign: "center" })} onClick={() => editor.chain().focus().setTextAlign("center").run()} title="居中"><FaAlignCenter size={15} /></BubbleBtn>
-                <BubbleBtn active={editor.isActive({ textAlign: "right" })} onClick={() => editor.chain().focus().setTextAlign("right").run()} title="右对齐"><FaAlignRight size={15} /></BubbleBtn>
-                <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-700 mx-0.5" />
-                <BubbleBtn active={false} onClick={() => {
-                  const url = window.prompt("图片地址", "https://");
-                  if (url) editor.chain().focus().setImage({ src: url }).run();
-                }} title="插入图片"><FaImage size={15} /></BubbleBtn>
-                <BubbleBtn active={false} onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} title="插入表格"><FaTable size={15} /></BubbleBtn>
-              </div>
+              <BubbleBtn active={editor.isActive("heading", { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} title="标题1"><FaHeading size={15} /></BubbleBtn>
+              <BubbleBtn active={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} title="标题2"><FaHeading size={15} /></BubbleBtn>
+              <BubbleBtn active={editor.isActive("heading", { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} title="标题3"><FaHeading size={15} /></BubbleBtn>
+              <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-700 mx-0.5" />
+              <BubbleBtn active={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()} title="无序列表"><FaListUl size={15} /></BubbleBtn>
+              <BubbleBtn active={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()} title="有序列表"><FaListOl size={15} /></BubbleBtn>
+              <BubbleBtn active={editor.isActive("taskList")} onClick={() => editor.chain().focus().toggleTaskList().run()} title="任务列表"><FaListCheck size={15} /></BubbleBtn>
+              <BubbleBtn active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()} title="引用"><FaQuoteRight size={15} /></BubbleBtn>
+              <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-700 mx-0.5" />
+              <BubbleBtn active={false} onClick={() => editor.chain().focus().setHorizontalRule().run()} title="分隔线"><FaRulerHorizontal size={15} /></BubbleBtn>
+              <BubbleBtn active={false} onClick={() => {
+                const url = window.prompt("图片地址", "https://");
+                if (url) editor.chain().focus().setImage({ src: url }).run();
+              }} title="插入图片"><FaImage size={15} /></BubbleBtn>
+              <BubbleBtn active={false} onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} title="插入表格"><FaTable size={15} /></BubbleBtn>
             </BubbleMenu>
+          )}
+
+          {/* Floating menu on empty line */}
+          {editor && (
+            <FloatingMenu
+              editor={editor}
+              className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-xl p-1 flex items-center gap-0.5"
+            >
+              <FloatingBtn active={editor.isActive("heading", { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} title="标题1"><FaHeading size={15} /></FloatingBtn>
+              <FloatingBtn active={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} title="标题2"><FaHeading size={15} /></FloatingBtn>
+              <FloatingBtn active={editor.isActive("heading", { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} title="标题3"><FaHeading size={15} /></FloatingBtn>
+              <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-700 mx-0.5" />
+              <FloatingBtn active={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()} title="无序列表"><FaListUl size={15} /></FloatingBtn>
+              <FloatingBtn active={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()} title="有序列表"><FaListOl size={15} /></FloatingBtn>
+              <FloatingBtn active={editor.isActive("taskList")} onClick={() => editor.chain().focus().toggleTaskList().run()} title="任务列表"><FaListCheck size={15} /></FloatingBtn>
+              <FloatingBtn active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()} title="引用"><FaQuoteRight size={15} /></FloatingBtn>
+              <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-700 mx-0.5" />
+              <FloatingBtn active={false} onClick={() => editor.chain().focus().setHorizontalRule().run()} title="分隔线"><FaRulerHorizontal size={15} /></FloatingBtn>
+              <FloatingBtn active={false} onClick={() => {
+                const url = window.prompt("图片地址", "https://");
+                if (url) editor.chain().focus().setImage({ src: url }).run();
+              }} title="插入图片"><FaImage size={15} /></FloatingBtn>
+              <FloatingBtn active={false} onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} title="插入表格"><FaTable size={15} /></FloatingBtn>
+            </FloatingMenu>
           )}
 
           <EditorContent editor={editor} />
@@ -525,6 +561,40 @@ function BubbleBtn({ children, active, onClick, title }: { children: React.React
       className={cn(
         "p-1.5 rounded transition-colors",
         active ? "bg-accent/15 text-accent" : "text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-700 dark:hover:text-zinc-300"
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+// ── Floating Menu Button ──
+function FloatingBtn({ children, active, onClick, title }: { children: React.ReactNode; active: boolean; onClick: () => void; title: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className={cn(
+        "p-1.5 rounded transition-colors",
+        active ? "bg-accent/15 text-accent" : "text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-700 dark:hover:text-zinc-300"
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+// ── Fixed Toolbar Button ──
+function ToolbarBtn({ children, active, onClick, title }: { children: React.ReactNode; active: boolean; onClick: () => void; title: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className={cn(
+        "p-1 rounded transition-colors",
+        active ? "bg-accent/15 text-accent" : "text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 hover:text-zinc-600 dark:hover:text-zinc-300"
       )}
     >
       {children}
