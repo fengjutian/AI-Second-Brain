@@ -21,6 +21,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { wikiLinkSuggestion } from "@/components/editor/WikiLink";
 import { WikiLinkHighlight } from "@/components/editor/WikiLinkHighlight";
 import { HoverPreview } from "@/components/editor/HoverPreview";
+import { AiPopup } from "@/components/editor/AiPopup";
+import { useAiToolkit } from "@/hooks/useAiToolkit";
 import { SlashCommand } from "@/components/editor/SlashCommand";
 import { useSlashMenu, SlashMenu } from "@/components/editor/SlashMenu";
 import { api } from "@/lib/api";
@@ -28,7 +30,7 @@ import { isTauri } from "@/lib/env";
 import {
   FaBold, FaItalic, FaStrikethrough, FaCode, FaHeading, FaListUl, FaListOl, FaQuoteRight, FaParagraph, FaGripVertical,
   FaCircleInfo, FaTable, FaImage, FaListCheck, FaHighlighter, FaAlignLeft, FaAlignCenter, FaAlignRight,
-  FaRulerHorizontal, FaCheck, FaXmark, FaEye,
+  FaRulerHorizontal, FaCheck, FaXmark, FaEye, FaWandMagicSparkles,
 } from "react-icons/fa6";
 import { cn } from "@/lib/utils";
 import { Markdown } from "@tiptap/markdown";
@@ -90,6 +92,7 @@ export function Editor({ tabId, noteId }: EditorProps) {
   tabIdRef.current = tabId;
   const [showMeta, setShowMeta] = useState(false);
   const [trackMode, setTrackMode] = useState<"edit" | "suggest" | "view">("edit");
+  const [showAiPopup, setShowAiPopup] = useState(false);
   const [hoverTarget, setHoverTarget] = useState<string | null>(null);
   const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null);
   const previewHoveredRef = useRef(false);
@@ -227,6 +230,8 @@ export function Editor({ tabId, noteId }: EditorProps) {
       },
     });
 
+  const ai = useAiToolkit(editor);
+
   useEffect(() => {
     if (editor && note) {
       if (editor.getMarkdown() !== note.content) {
@@ -264,6 +269,13 @@ export function Editor({ tabId, noteId }: EditorProps) {
     window.addEventListener("editor:format", handler);
     return () => window.removeEventListener("editor:format", handler);
   }, [editor]);
+
+  // Listen for editor:ai events from slash command
+  useEffect(() => {
+    const handler = () => setShowAiPopup(true);
+    window.addEventListener("editor:ai", handler);
+    return () => window.removeEventListener("editor:ai", handler);
+  }, []);
 
   // Sync track mode to editor
   useEffect(() => {
@@ -420,6 +432,8 @@ export function Editor({ tabId, noteId }: EditorProps) {
                 if (url) editor.chain().focus().setImage({ src: url }).run();
               }} title="插入图片"><FaImage size={15} /></BubbleBtn>
               <BubbleBtn active={false} onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} title="插入表格"><FaTable size={15} /></BubbleBtn>
+              <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-700 mx-0.5" />
+              <BubbleBtn active={false} onClick={() => setShowAiPopup(true)} title="AI 编辑"><FaWandMagicSparkles size={15} /></BubbleBtn>
             </BubbleMenu>
           )}
 
@@ -444,6 +458,8 @@ export function Editor({ tabId, noteId }: EditorProps) {
                 if (url) editor.chain().focus().setImage({ src: url }).run();
               }} title="插入图片"><FaImage size={15} /></FloatingBtn>
               <FloatingBtn active={false} onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} title="插入表格"><FaTable size={15} /></FloatingBtn>
+              <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-700 mx-0.5" />
+              <FloatingBtn active={false} onClick={() => setShowAiPopup(true)} title="AI 编辑"><FaWandMagicSparkles size={15} /></FloatingBtn>
             </FloatingMenu>
           )}
 
@@ -461,6 +477,23 @@ export function Editor({ tabId, noteId }: EditorProps) {
         </div>
       </div>
       <SlashOverlay editor={editor} />
+      <AiPopup
+        status={ai.status}
+        result={ai.result}
+        error={ai.error}
+        onSubmit={(instruction) => ai.improveText(instruction)}
+        onAccept={() => {
+          (editor?.commands as any).acceptAll();
+          setShowAiPopup(false);
+        }}
+        onReject={() => {
+          (editor?.commands as any).rejectAll();
+          setShowAiPopup(false);
+        }}
+        onCancel={ai.cancel}
+        onDismiss={() => setShowAiPopup(false)}
+        visible={showAiPopup}
+      />
     </div>
   );
 }

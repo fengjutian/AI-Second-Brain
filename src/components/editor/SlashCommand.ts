@@ -115,6 +115,14 @@ const items: SlashCommandItem[] = [
       editor.chain().focus().toggleHighlight().run();
     },
   },
+  {
+    title: "AI 写作",
+    description: "选中文本后输入指令让 AI 改写",
+    icon: "✨",
+    command: () => {
+      window.dispatchEvent(new CustomEvent("editor:ai"));
+    },
+  },
 ];
 
 export const slashCommandPluginKey = new PluginKey("slash-command");
