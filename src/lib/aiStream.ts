@@ -48,7 +48,11 @@ export async function aiStream(
     throw new ApiError(res.status, await res.text().catch(() => "Unknown error"));
   }
 
-  const reader = res.body!.getReader();
+  if (!res.body) {
+    throw new ApiError(0, "Response has no body");
+  }
+
+  const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
   let fullResponse = "";

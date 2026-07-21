@@ -64,7 +64,7 @@ export function AiPopup({
 
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[520px] max-w-[calc(100vw-2rem)]">
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-2xl p-3 animate-slide-up">
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-2xl p-3">
         {status === "idle" && (
           <div className="flex items-center gap-2">
             <FaWandMagicSparkles size={16} className="text-accent shrink-0" />

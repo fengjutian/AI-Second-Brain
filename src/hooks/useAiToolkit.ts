@@ -22,6 +22,11 @@ interface AiState {
   error: string;
 }
 
+/** Get the current track changes mode, or "edit" if not available. */
+function getTrackMode(editor: Editor): string {
+  return (editor.storage as any)?.trackChanges?.mode ?? "edit";
+}
+
 function buildSystemPrompt(): string {
   return `You are a precise text editor AI embedded in a note-taking app.
 
@@ -77,10 +82,27 @@ export function useAiToolkit(editor: Editor | null) {
     setState({ status: "idle", result: "", error: "" });
   }, []);
 
+  /** Apply an edit safely — checks editor is alive and wraps in suggest mode. */
+  const applyEdit = useCallback(
+    (fn: () => void) => {
+      if (!editor || editor.isDestroyed) return;
+      const prevMode = getTrackMode(editor);
+      (editor.commands as any).setTrackChangesMode("suggest");
+      try {
+        fn();
+      } finally {
+        if (!editor.isDestroyed) {
+          (editor.commands as any).setTrackChangesMode(prevMode);
+        }
+      }
+    },
+    [editor],
+  );
+
   /** Rewrite the selected text (or current paragraph) according to instruction. */
   const improveText = useCallback(
     async (instruction: string) => {
-      if (!editor) return;
+      if (!editor || editor.isDestroyed) return;
 
       // Get selected text or current paragraph
       const { from, to } = editor.state.selection;
@@ -112,21 +134,16 @@ export function useAiToolkit(editor: Editor | null) {
 
         abortRef.current = null;
 
-        if (fullResult) {
-          // Apply as tracked change: delete original, insert result
-          // Switch to suggest mode temporarily so changes are tracked
-          const prevMode = (editor.storage as any)?.trackChanges?.mode ?? "edit";
-          (editor.commands as any).setTrackChangesMode("suggest");
-
-          editor
-            .chain()
-            .focus()
-            .setTextSelection(range)
-            .deleteSelection()
-            .insertContentAt(range.from, fullResult)
-            .run();
-
-          (editor.commands as any).setTrackChangesMode(prevMode);
+        if (fullResult && editor && !editor.isDestroyed) {
+          applyEdit(() => {
+            editor
+              .chain()
+              .focus()
+              .setTextSelection(range)
+              .deleteSelection()
+              .insertContentAt(range.from, fullResult)
+              .run();
+          });
           setState({ status: "done", result: "", error: "" });
         }
       } catch (err: any) {
@@ -134,12 +151,12 @@ export function useAiToolkit(editor: Editor | null) {
         setState({ status: "error", result: "", error: err?.message || "AI 请求失败" });
       }
     },
-    [editor],
+    [editor, applyEdit],
   );
 
   /** AI continues writing from the cursor position. */
   const continueWriting = useCallback(async () => {
-    if (!editor) return;
+    if (!editor || editor.isDestroyed) return;
 
     // Get context: text from start of paragraph to cursor
     const { $from } = editor.state.selection;
@@ -169,28 +186,25 @@ export function useAiToolkit(editor: Editor | null) {
 
       abortRef.current = null;
 
-      if (fullResult) {
-        const prevMode = (editor.storage as any)?.trackChanges?.mode ?? "edit";
-        (editor.commands as any).setTrackChangesMode("suggest");
-
-        editor
-          .chain()
-          .focus()
-          .insertContentAt(cursorPos, " " + fullResult)
-          .run();
-
-        (editor.commands as any).setTrackChangesMode(prevMode);
+      if (fullResult && editor && !editor.isDestroyed) {
+        applyEdit(() => {
+          editor
+            .chain()
+            .focus()
+            .insertContentAt(cursorPos, " " + fullResult)
+            .run();
+        });
         setState({ status: "done", result: "", error: "" });
       }
     } catch (err: any) {
       if (err?.name === "AbortError") return;
       setState({ status: "error", result: "", error: err?.message || "AI 请求失败" });
     }
-  }, [editor]);
+  }, [editor, applyEdit]);
 
   /** Proofread selection (or whole document). */
   const proofread = useCallback(async () => {
-    if (!editor) return;
+    if (!editor || editor.isDestroyed) return;
 
     const { from, to } = editor.state.selection;
     const hasSelection = from !== to;
@@ -222,26 +236,23 @@ export function useAiToolkit(editor: Editor | null) {
 
       abortRef.current = null;
 
-      if (fullResult && fullResult !== text) {
-        const prevMode = (editor.storage as any)?.trackChanges?.mode ?? "edit";
-        (editor.commands as any).setTrackChangesMode("suggest");
-
-        editor
-          .chain()
-          .focus()
-          .setTextSelection(range)
-          .deleteSelection()
-          .insertContent(fullResult)
-          .run();
-
-        (editor.commands as any).setTrackChangesMode(prevMode);
+      if (fullResult && fullResult !== text && editor && !editor.isDestroyed) {
+        applyEdit(() => {
+          editor
+            .chain()
+            .focus()
+            .setTextSelection(range)
+            .deleteSelection()
+            .insertContent(fullResult)
+            .run();
+        });
       }
       setState({ status: "done", result: "", error: "" });
     } catch (err: any) {
       if (err?.name === "AbortError") return;
       setState({ status: "error", result: "", error: err?.message || "AI 请求失败" });
     }
-  }, [editor]);
+  }, [editor, applyEdit]);
 
   return {
     ...state,
