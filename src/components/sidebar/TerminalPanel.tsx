@@ -41,10 +41,7 @@ type ShellDef = { label: string; path: string };
 
 const WINDOWS_SHELLS: ShellDef[] = [
   { label: "CMD", path: "cmd.exe" },
-  { label: "PowerShell 5", path: "powershell.exe" },
-  { label: "PowerShell 7", path: "pwsh.exe" },
-  { label: "WSL", path: "wsl.exe" },
-  { label: "Git Bash", path: "C:\\Program Files\\Git\\bin\\bash.exe" },
+  { label: "PowerShell", path: "powershell.exe" },
 ];
 
 const UNIX_SHELLS: ShellDef[] = [

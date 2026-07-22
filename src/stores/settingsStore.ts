@@ -13,11 +13,27 @@ export interface AiConfig {
   deepseek_base_url: string;
 }
 
+const STORAGE_KEY = "aiConfig";
+
+function loadAiConfig(): AiConfig {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return { ...DEFAULT_AI_CONFIG, ...JSON.parse(raw) };
+  } catch {}
+  return { ...DEFAULT_AI_CONFIG };
+}
+
+export function persistAiConfig(cfg: AiConfig) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
+  } catch {}
+}
+
 export const DEFAULT_AI_CONFIG: AiConfig = {
   embedding_provider: "local",
   embedding_model: null,
-  llm_provider: "local",
-  llm_model: null,
+  llm_provider: "deepseek",
+  llm_model: "deepseek-chat",
   api_key_openai: "",
   api_key_deepseek: "",
   ollama_base_url: "http://localhost:11434/v1",
@@ -43,6 +59,7 @@ interface SettingsState {
   setRecentVaults: (v: RecentVault[]) => void;
   removeRecentVault: (path: string) => void;
   setAiConfig: (c: AiConfig) => void;
+  saveAiConfig: (c: AiConfig) => void;
   setAiConfigLoading: (v: boolean) => void;
   setOfflineMode: (v: boolean) => void;
 }
@@ -52,7 +69,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   vaultPath: null,
   vaultName: null,
   recentVaults: [],
-  aiConfig: DEFAULT_AI_CONFIG,
+  aiConfig: loadAiConfig(),
   aiConfigLoading: false,
   offlineMode: localStorage.getItem("offlineMode") === "true",
   setTheme: (theme) => {
@@ -66,6 +83,10 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       recentVaults: s.recentVaults.filter((v) => v.path !== path),
     })),
   setAiConfig: (aiConfig) => set({ aiConfig }),
+  saveAiConfig: (aiConfig) => {
+    persistAiConfig(aiConfig);
+    set({ aiConfig });
+  },
   setAiConfigLoading: (aiConfigLoading) => set({ aiConfigLoading }),
   setOfflineMode: (offlineMode) => {
     localStorage.setItem("offlineMode", String(offlineMode));

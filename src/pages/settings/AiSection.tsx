@@ -1,55 +1,48 @@
 import { FaSpinner } from "react-icons/fa6";
 import { useSettingsStore, DEFAULT_AI_CONFIG, type AiConfig } from "@/stores/settingsStore";
-import { api } from "@/lib/api";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 
 export function AiSection() {
   const aiConfig = useSettingsStore((s) => s.aiConfig);
-  const setAiConfig = useSettingsStore((s) => s.setAiConfig);
-  const loading = useSettingsStore((s) => s.aiConfigLoading);
-  const setLoading = useSettingsStore((s) => s.setAiConfigLoading);
+  const saveAiConfig = useSettingsStore((s) => s.saveAiConfig);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  useEffect(() => {
-    setLoading(true);
-    api.config.ai
-      .get()
-      .then((cfg) => setAiConfig(cfg))
-      .catch(() => {
-        // API unavailable — use local defaults
-        setAiConfig(DEFAULT_AI_CONFIG);
-      })
-      .finally(() => setLoading(false));
-  }, [setAiConfig, setLoading]);
+  const update = useCallback(
+    (patch: Partial<AiConfig>) => {
+      saveAiConfig({ ...aiConfig, ...patch });
+    },
+    [aiConfig, saveAiConfig],
+  );
 
-  const handleSave = useCallback(async (updates: Partial<AiConfig>) => {
-    if (!aiConfig) return;
-    setSaving(true);
-    setSaved(false);
-    try {
-      const updated = await api.config.ai.set(updates);
-      setAiConfig(updated);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    } catch (e) {
-      console.error("Failed to save AI config:", e);
-    } finally {
-      setSaving(false);
-    }
-  }, [aiConfig, setAiConfig]);
+  const handleSave = useCallback(
+    async (updates: Partial<AiConfig>) => {
+      setSaving(true);
+      setSaved(false);
+      try {
+        saveAiConfig({ ...aiConfig, ...updates });
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+      } catch (e) {
+        console.error("Failed to save AI config:", e);
+      } finally {
+        setSaving(false);
+      }
+    },
+    [aiConfig, saveAiConfig],
+  );
 
-  if (loading || !aiConfig) {
-    return (
-      <div className="flex items-center gap-2 text-sm text-zinc-400">
-        <FaSpinner size={16} className="animate-spin text-blue-500" />
-        加载中...
-      </div>
-    );
-  }
+  const handleReset = useCallback(() => {
+    saveAiConfig({ ...DEFAULT_AI_CONFIG });
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }, [saveAiConfig]);
+
+  if (!aiConfig) return null;
 
   return (
     <div className="space-y-8">
+      {/* ---- Embedding ---- */}
       <section>
         <h3 className="text-sm font-medium mb-3">Embedding 模型</h3>
         <div className="space-y-3">
@@ -57,7 +50,7 @@ export function AiSection() {
             <span className="text-xs text-zinc-500 mb-1 block">提供者</span>
             <select
               value={aiConfig.embedding_provider}
-              onChange={(e) => handleSave({ embedding_provider: e.target.value })}
+              onChange={(e) => update({ embedding_provider: e.target.value })}
               className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm"
             >
               <option value="local">local (sentence-transformers)</option>
@@ -71,18 +64,17 @@ export function AiSection() {
             <input
               type="text"
               value={aiConfig.embedding_model || ""}
-              onChange={(e) => {
-                const v = e.target.value.trim();
-                setAiConfig({ ...aiConfig, embedding_model: v || null });
-              }}
-              onBlur={() => handleSave({ embedding_model: aiConfig.embedding_model })}
-              placeholder={aiConfig.embedding_provider === "local" ? "all-MiniLM-L6-v2" : "text-embedding-3-small"}
+              onChange={(e) => update({ embedding_model: e.target.value.trim() || null })}
+              placeholder={
+                aiConfig.embedding_provider === "local" ? "all-MiniLM-L6-v2" : "text-embedding-3-small"
+              }
               className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm"
             />
           </label>
         </div>
       </section>
 
+      {/* ---- LLM ---- */}
       <section>
         <h3 className="text-sm font-medium mb-3">LLM 对话模型</h3>
         <div className="space-y-3">
@@ -90,7 +82,7 @@ export function AiSection() {
             <span className="text-xs text-zinc-500 mb-1 block">提供者</span>
             <select
               value={aiConfig.llm_provider}
-              onChange={(e) => handleSave({ llm_provider: e.target.value })}
+              onChange={(e) => update({ llm_provider: e.target.value })}
               className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm"
             >
               <option value="local">local (Ollama)</option>
@@ -105,11 +97,7 @@ export function AiSection() {
             <input
               type="text"
               value={aiConfig.llm_model || ""}
-              onChange={(e) => {
-                const v = e.target.value.trim();
-                setAiConfig({ ...aiConfig, llm_model: v || null });
-              }}
-              onBlur={() => handleSave({ llm_model: aiConfig.llm_model })}
+              onChange={(e) => update({ llm_model: e.target.value.trim() || null })}
               placeholder={
                 aiConfig.llm_provider === "local" ? "qwen2.5:7b" :
                 aiConfig.llm_provider === "deepseek" ? "deepseek-chat" :
@@ -118,27 +106,27 @@ export function AiSection() {
               className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm"
             />
           </label>
+
           {aiConfig.llm_provider === "local" && (
             <label className="block">
               <span className="text-xs text-zinc-500 mb-1 block">Ollama 地址</span>
               <input
                 type="text"
                 value={aiConfig.ollama_base_url}
-                onChange={(e) => setAiConfig({ ...aiConfig, ollama_base_url: e.target.value })}
-                onBlur={() => handleSave({ ollama_base_url: aiConfig.ollama_base_url })}
+                onChange={(e) => update({ ollama_base_url: e.target.value })}
                 placeholder="http://localhost:11434/v1"
                 className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm"
               />
             </label>
           )}
+
           {aiConfig.llm_provider === "deepseek" && (
             <label className="block">
               <span className="text-xs text-zinc-500 mb-1 block">DeepSeek 地址</span>
               <input
                 type="text"
                 value={aiConfig.deepseek_base_url}
-                onChange={(e) => setAiConfig({ ...aiConfig, deepseek_base_url: e.target.value })}
-                onBlur={() => handleSave({ deepseek_base_url: aiConfig.deepseek_base_url })}
+                onChange={(e) => update({ deepseek_base_url: e.target.value })}
                 placeholder="https://api.deepseek.com/v1"
                 className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm"
               />
@@ -147,6 +135,7 @@ export function AiSection() {
         </div>
       </section>
 
+      {/* ---- API Key ---- */}
       <section>
         <h3 className="text-sm font-medium mb-3">API Key</h3>
         {aiConfig.llm_provider === "local" && (
@@ -160,8 +149,7 @@ export function AiSection() {
             <input
               type="password"
               value={aiConfig.api_key_openai}
-              onChange={(e) => setAiConfig({ ...aiConfig, api_key_openai: e.target.value })}
-              onBlur={() => handleSave({ api_key_openai: aiConfig.api_key_openai })}
+              onChange={(e) => update({ api_key_openai: e.target.value })}
               placeholder="sk-..."
               className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm font-mono"
             />
@@ -175,8 +163,7 @@ export function AiSection() {
             <input
               type="password"
               value={aiConfig.api_key_deepseek}
-              onChange={(e) => setAiConfig({ ...aiConfig, api_key_deepseek: e.target.value })}
-              onBlur={() => handleSave({ api_key_deepseek: aiConfig.api_key_deepseek })}
+              onChange={(e) => update({ api_key_deepseek: e.target.value })}
               placeholder="sk-..."
               className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm font-mono"
             />
@@ -184,7 +171,8 @@ export function AiSection() {
         )}
       </section>
 
-      <div className="flex items-center gap-2 text-sm">
+      {/* ---- Actions ---- */}
+      <div className="flex items-center gap-3 text-sm">
         {saving && (
           <span className="flex items-center gap-1 text-zinc-400">
             <FaSpinner size={14} className="animate-spin text-blue-500" />
@@ -192,6 +180,13 @@ export function AiSection() {
           </span>
         )}
         {saved && <span className="text-green-600">✅ 已保存</span>}
+        <div className="flex-1" />
+        <button
+          onClick={handleReset}
+          className="text-xs text-zinc-400 hover:text-zinc-200 underline underline-offset-2"
+        >
+          恢复默认
+        </button>
       </div>
     </div>
   );

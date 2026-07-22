@@ -41,6 +41,12 @@ export function ChatPanel() {
   const [loading, setLoading] = useState(false);
   const listRef = useRef<any>(null);
   const aiConfig = useSettingsStore((s) => s.aiConfig);
+  const hasApiKey =
+    aiConfig?.llm_provider === "local"
+      ? true
+      : aiConfig?.llm_provider === "deepseek"
+        ? !!aiConfig?.api_key_deepseek
+        : !!aiConfig?.api_key_openai;
 
   const activeConv = useMemo(
     () => conversations.find((c) => c.key === activeKey) || conversations[0],
@@ -162,7 +168,7 @@ export function ChatPanel() {
           <span className="text-[11px] font-medium text-zinc-600 dark:text-zinc-400 truncate">
             {activeConv.label}
           </span>
-          {!aiConfig?.api_key_openai && (
+          {!hasApiKey && (
             <span className="text-[10px] text-amber-500">未配置 API Key</span>
           )}
           <div className="flex-1" />
@@ -210,8 +216,8 @@ export function ChatPanel() {
           <Sender
             onSubmit={handleSend}
             loading={loading}
-            placeholder={aiConfig?.api_key_openai ? "输入消息..." : "请先在设置中配置 API Key"}
-            disabled={!aiConfig?.api_key_openai}
+            placeholder={hasApiKey ? "输入消息..." : "请先在设置中配置 API Key"}
+            disabled={!hasApiKey}
             style={{ borderRadius: 12 }}
           />
         </div>
