@@ -57,7 +57,7 @@ fn spawn_terminal(
         }
     }
 
-    let mut child = pty_pair
+    let child = pty_pair
         .slave
         .spawn_command(cmd)
         .map_err(|e| e.to_string())?;
@@ -79,6 +79,9 @@ fn spawn_terminal(
     );
 
     // Spawn reader thread using byte buffer
+    // Note: we do NOT hold a reference to state here — Tauri's State<'_, _>
+    // can't escape the function body into a 'static thread.
+    // Child cleanup is handled by kill_inner / kill_terminal.
     let app_handle = app.clone();
     let tid = tab_id.clone();
     std::thread::spawn(move || {
@@ -95,14 +98,6 @@ fn spawn_terminal(
                 Err(_) => break,
             }
         }
-        // Wait for child
-        {
-            let mut guard = state.handles.lock().unwrap();
-            if let Some(h) = guard.get_mut(&tid) {
-                let _ = h.child.wait();
-            }
-            guard.remove(&tid);
-        }
         let exit_payload = serde_json::json!({"tab_id": tid});
         let _ = app_handle.emit("pty-exit", &exit_payload.to_string());
     });
@@ -114,7 +109,8 @@ fn kill_inner(state: &PtyState, tab_id: &str) {
     let mut guard = state.handles.lock().unwrap();
     if let Some(mut h) = guard.remove(tab_id) {
         let _ = h.child.kill();
-        drop(h);
+        // Reap the child to prevent zombie processes
+        let _ = h.child.wait();
     }
 }
 
