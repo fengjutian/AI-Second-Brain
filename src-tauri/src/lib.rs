@@ -75,7 +75,7 @@ fn spawn_terminal(
 
     state.handles.lock().unwrap().insert(
         tab_id.clone(),
-        PtyHandle { writer: Box::new(writer), master, child: Box::new(child) },
+        PtyHandle { writer: Box::new(writer), master, child },
     );
 
     // Spawn reader thread using byte buffer
